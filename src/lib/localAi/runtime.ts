@@ -65,6 +65,19 @@ const hasJspi = (): boolean => !!(WebAssembly as { Suspending?: unknown }).Suspe
 
 // --- install ----------------------------------------------------------------
 
+// Local first, like Clippy's sprites: a deployment that ships models/ next to the app
+// (and the dev/preview servers) never touches GitHub. Either source is hash-verified by installModel.
+const localFirstFetch = async (url: string, init?: { signal?: AbortSignal }): Promise<Response> => {
+  try {
+    const local = await fetch(`${import.meta.env.BASE_URL}models/${url.slice(url.lastIndexOf("/") + 1)}`, init);
+    // A static host's SPA fallback answers 200 text/html for missing files: that is not a model part.
+    if (local.ok && !(local.headers.get("content-type") ?? "").includes("text/html")) return local;
+  } catch (e) {
+    if (init?.signal?.aborted) throw e;
+  }
+  return fetch(url, init);
+};
+
 export const installModelToCache = (
   onProgress: (p: DownloadProgress) => void,
   signal?: AbortSignal,
@@ -73,7 +86,7 @@ export const installModelToCache = (
     // A new model revision may have shipped since this profile last cached
     // one; drop the old bucket before filling the new one.
     void pruneModelCaches();
-    return installModel({ cache, manifest: MODEL_MANIFEST, onProgress, signal });
+    return installModel({ cache, manifest: MODEL_MANIFEST, onProgress, signal, fetchImpl: localFirstFetch });
   });
 
 export async function isModelCached(): Promise<boolean> {

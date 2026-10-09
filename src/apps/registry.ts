@@ -24,6 +24,7 @@ export const APPS: readonly AppDef[] = [
   { id: "calc", title: "app.calc", icon: "🧮", component: lazy(() => import("./desk/Calculator.tsx")), size: { w: 230, h: 290 }, singleton: true, desktop: false, start: true },
   { id: "mines", title: "app.mines", icon: "💣", component: lazy(() => import("./desk/Minesweeper.tsx")), size: { w: 250, h: 300 }, singleton: true, desktop: true, start: true },
   { id: "clock", title: "app.clock", icon: "🕐", component: lazy(() => import("./desk/Clock.tsx")), size: { w: 230, h: 280 }, singleton: true, desktop: true, start: true },
+  { id: "chat", title: "app.askClippy", icon: "📎", component: lazy(() => import("./chat/Chat.tsx")), size: { w: 380, h: 440 }, singleton: true, desktop: false, start: true },
   { id: "settings", title: "app.settings", icon: "🛠️", component: lazy(() => import("./settings/Settings.tsx")), size: { w: 460, h: 520 }, singleton: true, desktop: false, start: true },
   { id: "help", title: "app.help", icon: "❓", component: lazy(() => import("./help/Help.tsx")), size: { w: 420, h: 300 }, singleton: true, desktop: true, start: true },
 ];

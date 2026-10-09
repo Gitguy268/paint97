@@ -1,6 +1,8 @@
 import react from '@vitejs/plugin-react'
 import type { Plugin } from 'vite'
 import { defineConfig } from 'vite'
+import fs from 'node:fs'
+import path from 'node:path'
 
 // ---------------------------------------------------------------------------
 // Security headers
@@ -137,6 +139,26 @@ function selfHostExcalidrawFonts(): Plugin {
   }
 }
 
+/**
+ * Serve the committed model parts (./models, 253 MB, deliberately not in public/ so they
+ * are never copied into dist or precached) to the dev and preview servers.
+ */
+function serveModels(): Plugin {
+  const handler = (req: { url?: string }, res: import('node:http').ServerResponse, next: () => void) => {
+    const m = /^\/models\/([\w.-]+\.part)$/.exec(req.url ?? '')
+    const file = m && path.join(import.meta.dirname, 'models', m[1]!)
+    if (!file || !fs.existsSync(file)) return next()
+    res.setHeader('Content-Type', 'application/octet-stream')
+    res.setHeader('Content-Length', String(fs.statSync(file).size))
+    fs.createReadStream(file).pipe(res)
+  }
+  return {
+    name: 'paint97:serve-models',
+    configureServer(server) { server.middlewares.use(handler) },
+    configurePreviewServer(server) { server.middlewares.use(handler) },
+  }
+}
+
 /** Build-time CSP <meta> so static deployments get a policy without a server. */
 function cspMeta(): Plugin {
   return {
@@ -160,7 +182,7 @@ export default defineConfig(() => {
   return {
     // NOTE: vercel.json duplicates the production policy as HTTP headers —
     // `npm run check:csp` (CI) fails if the two ever drift apart.
-    plugins: [react(), selfHostExcalidrawFonts(), securityHeaders(), cspMeta()],
+    plugins: [react(), selfHostExcalidrawFonts(), securityHeaders(), serveModels(), cspMeta()],
     server: {
       port: 7891,
       host: 'localhost',

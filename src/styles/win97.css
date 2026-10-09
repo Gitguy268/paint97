@@ -165,3 +165,24 @@ input, textarea, select { user-select: text; }
 .clock-digital { text-align: center; } .clock-digital p { margin: 0; font-size: 13px; }
 .clock-digital .clock-time { font: bold 34px "Courier New", monospace; }
 .win:focus { outline: 0; }
+
+/* Ask Clippy */
+.chat { flex: 1; min-height: 0; display: flex; flex-direction: column; background: var(--face); }
+.chat-setup { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; padding: 16px; text-align: center; }
+.chat-setup p { margin: 0; line-height: 1.5; max-width: 38ch; }
+.chat-glyph { font-size: 32px; }
+.chat-note { margin: 0; color: #404040; }
+.chat-err { margin: 0; padding: 4px 8px 0; color: #a00000; }
+.chat-progress { width: 100%; max-width: 260px; height: 18px; padding: 2px; background: #fff; box-shadow: inset -1px -1px #fff, inset 1px 1px #0a0a0a, inset -2px -2px #dfdfdf, inset 2px 2px #808080; }
+.chat-progress > div { height: 100%; background: repeating-linear-gradient(90deg, var(--navy) 0 10px, transparent 10px 12px); }
+.chat-progress.busy > div { width: 40%; animation: chat-busy 1.2s steps(8) infinite alternate; }
+@keyframes chat-busy { from { margin-left: 0; } to { margin-left: 60%; } }
+.chat-log { flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; margin: 3px; padding: 8px; background: #fff; user-select: text; box-shadow: inset -1px -1px #fff, inset 1px 1px #0a0a0a, inset -2px -2px #dfdfdf, inset 2px 2px #808080; }
+.chat-log:focus-visible { outline: 1px dotted #000; outline-offset: -4px; }
+.chat-msg { max-width: 85%; padding: 4px 7px; line-height: 1.45; white-space: pre-wrap; overflow-wrap: break-word; border: 1px solid #808080; }
+.chat-msg.user { align-self: flex-end; background: #d4d0c8; }
+.chat-msg.assistant { align-self: flex-start; background: #ffffe1; }
+.chat-composer { display: flex; gap: 6px; padding: 5px; }
+.chat-composer input { flex: 1; min-width: 0; }
+.chat-model { display: flex; align-items: center; gap: 10px; padding: 3px 6px; border-top: 1px solid var(--shadow); }
+.chat-model button { margin-left: auto; min-width: 0; padding: 0 8px; }

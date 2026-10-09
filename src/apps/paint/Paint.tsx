@@ -12,11 +12,11 @@ import { isLive, sanitizeName } from "../../lib/fs.ts";
 import { fsOps, fsState } from "../../lib/fsStore.ts";
 import { useStore } from "../../lib/store.ts";
 import { VersionList } from "../files/VersionList.tsx";
-import { boundFile, openReq } from "./session.ts";
+import { boundFile, canvasCmd, openReq, paintApi } from "./session.ts";
 import type { AppProps } from "../registry.ts";
 import { Dialog } from "../../ui/Dialog.tsx";
 import { MenuBar } from "../../ui/Menu.tsx";
-import { applyScene, copyPng, exportFramed, exportPng, exportSvg, insertSticker, sendHistoryKey, type AppState, type ExcalidrawElement, type PaintApi } from "./api.ts";
+import { applyCanvasCommand, applyScene, copyPng, exportFramed, exportPng, exportSvg, insertSticker, sendHistoryKey, type AppState, type ExcalidrawElement, type PaintApi } from "./api.ts";
 import { Palette } from "./Palette.tsx";
 import { ToolStrip, type ToolId } from "./ToolStrip.tsx";
 
@@ -83,6 +83,14 @@ export default function Paint({ winId }: AppProps) {
     openReq.set(null);
     void applyScene(api, req.scene).then(() => { boundFile.set(req.fileId); setName(req.name); notify(t("paint.opened", { name: req.name })); }, () => notify(t("paint.openBad")));
   }, [api, req, notify, t]);
+
+  useEffect(() => { paintApi.set(api); return () => paintApi.set(null); }, [api]);
+  const cmd = useStore(canvasCmd, (x) => x);
+  useEffect(() => {
+    if (!api || !cmd) return;
+    canvasCmd.set(null);
+    void applyCanvasCommand(api, cmd).catch(() => notify(t("paint.exportFail")));
+  }, [api, cmd, notify, t]);
 
   const currentScene = (a: PaintApi): Scene => ({ elements: a.getSceneElements() as unknown as object[], appState: a.getAppState() });
   const saved = (as: string) => { saveChord(); notify(t("paint.saved", { name: as })); emitClippy({ kind: "save" }); };
