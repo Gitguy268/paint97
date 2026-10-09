@@ -25,3 +25,5 @@
 }
 .excali-host .excalidraw .dropdown-menu-item:hover { background: #000080 !important; color: #fff !important; }
 .excali-host .excalidraw .zoom-actions, .excali-host .excalidraw .undo-redo-buttons { gap: 2px; }
+/* 98.css floors every <button> at 75x23; Excalidraw's icon buttons must keep their own size. */
+.excali-host .excalidraw button { min-width: 0; min-height: 0; }

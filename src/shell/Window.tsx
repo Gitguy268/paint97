@@ -1,4 +1,4 @@
-import { memo, Suspense, useRef } from "react";
+import { memo, Suspense, useEffect, useRef } from "react";
 import { appById } from "../apps/registry.ts";
 import { useT } from "../i18n/index.ts";
 import { snapZone, type WinState } from "../lib/wm.ts";
@@ -11,6 +11,11 @@ export const Window = memo(function Window({ win, z, active }: { win: WinState; 
   const t = useT();
   const def = appById(win.appId);
   const drag = useRef<{ sx: number; sy: number; x: number; y: number } | null>(null);
+  const el = useRef<HTMLElement>(null);
+  // Focus follows the active window (opened, restored, Alt+Tab) unless focus is already inside it.
+  useEffect(() => {
+    if (active && win.mode !== "min" && el.current && !el.current.contains(document.activeElement)) el.current.focus({ preventScroll: true });
+  }, [active, win.mode]);
   if (!def) return null;
   const title = win.title ?? t(def.title);
   const max = win.mode === "max";
@@ -55,6 +60,8 @@ export const Window = memo(function Window({ win, z, active }: { win: WinState; 
 
   return (
     <section
+      ref={el}
+      tabIndex={-1}
       className={`window win ${active ? "" : "inactive"} ${max ? "maximized" : ""}`}
       style={{ left: win.rect.x, top: win.rect.y, width: win.rect.w, height: win.rect.h, zIndex: z, display: win.mode === "min" ? "none" : undefined }}
       aria-labelledby={`${win.id}-t`}

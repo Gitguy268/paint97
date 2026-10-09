@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { appById } from "../apps/registry.ts";
 import { useT } from "../i18n/index.ts";
+import { loadFs } from "../lib/fsStore.ts";
 import { settings } from "../lib/settings.ts";
 import { startupChime } from "../lib/sound.ts";
 import { useStore } from "../lib/store.ts";
@@ -44,6 +45,7 @@ export function Shell({ extraStart, children }: { extraStart?: MenuEntry[]; chil
   const [sw, setSw] = useState<{ ids: string[]; index: number } | null>(null);
   const active = focusedId({ wins, seq: 0 });
 
+  useEffect(() => { void loadFs(); }, []);
   useEffect(() => {
     let metaAlone = false;
     let switcher: { ids: string[]; index: number } | null = null;

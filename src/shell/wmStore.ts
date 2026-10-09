@@ -39,6 +39,8 @@ export const actions = {
   taskbar: (id: string) => apply((s) => W.taskbarClick(s, id)),
   move: (id: string, x: number, y: number) => apply((s) => W.move(s, id, x, y, workArea())),
   resize: (id: string, r: W.Rect) => apply((s) => W.resize(s, id, r)),
+  /** Resize in place (apps that hug their content). */
+  setSize: (id: string, w: number, h: number) => apply((s) => { const r = s.wins.find((x) => x.id === id)?.rect; return r && (r.w !== w || r.h !== h) ? W.resize(s, id, { ...r, w, h }) : s; }),
   snap: (id: string, z: W.SnapZone) => apply((s) => W.snap(s, id, z, workArea())),
   setTitle: (id: string, title: string | null) => apply((s) => W.setTitle(s, id, title)),
   fit: () => apply((s) => W.fitMaximized(s, workArea())),

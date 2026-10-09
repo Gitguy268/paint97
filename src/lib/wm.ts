@@ -59,7 +59,7 @@ export function open(wm: Wm, spec: OpenSpec, props: Props, area: Rect): Wm {
     id: `${spec.appId}#${seq}`,
     appId: spec.appId,
     title: null,
-    rect: { x: clamp(area.x + 60 + step, area.x, Math.max(area.x, area.x + area.w - w)), y: clamp(area.y + 30 + step, area.y, Math.max(area.y, area.y + area.h - h)), w, h },
+    rect: { x: clamp(area.x + 100 + step, area.x, Math.max(area.x, area.x + area.w - w)), y: clamp(area.y + 30 + step, area.y, Math.max(area.y, area.y + area.h - h)), w, h },
     mode: "normal",
     restore: null,
     minFrom: "normal",
