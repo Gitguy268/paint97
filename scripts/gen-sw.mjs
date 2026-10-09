@@ -8,14 +8,10 @@
 //                skipWaiting
 //   - activate:  drop caches from previous builds (name is content-derived),
 //                then clients.claim so offline works from the next reload
-//   - fetch:     cross-origin requests pass straight through (no
-//                respondWith) — the 253 MB model parts live in their own
-//                Cache Storage bucket managed by model.ts and must never be
-//                duplicated here, and keeping these as plain page requests
-//                means the e2e suite's route mocks keep seeing them; the
-//                vendored /assets/clippy/ files pass through too, since the
-//                app's pinned-CDN fallback owns them (the CDN test aborts
-//                them via page.route)
+//   - fetch:     cross-origin requests and same-origin /models/ parts pass
+//                straight through (no respondWith): the 253 MB model lives
+//                in its own Cache Storage bucket managed by model.ts and
+//                must never be duplicated here
 //   - navigations: network-first with the precached index.html as offline
 //                fallback (an offline reload re-renders the shell)
 //   - everything else same-origin: cache-first, filled on first use —
@@ -138,11 +134,10 @@ self.addEventListener("fetch", (event) => {
   const req = event.request;
   if (req.method !== "GET") return;
   const url = new URL(req.url);
-  // Pass-through (no respondWith): cross-origin bytes — notably the model
-  // parts, which model.ts caches in its own bucket — and the vendored
-  // clippy assets stay plain page requests and are never cached here.
+  // Pass-through (no respondWith): cross-origin bytes and the model parts,
+  // which model.ts verifies and caches in its own bucket. Never cached here.
   if (url.origin !== self.location.origin) return;
-  if (url.pathname.includes("/assets/clippy/")) return;
+  if (url.pathname.includes("/models/")) return;
 
   if (req.mode === "navigate") {
     // Network-first so deploys land immediately; the precached shell is

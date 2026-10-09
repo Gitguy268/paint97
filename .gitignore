@@ -28,8 +28,8 @@ playwright-report/
 
 # Visual baselines: CI (Linux) commits its own set; other platforms are
 # local-only because font rendering differs per OS.
-tests/visual.spec.ts-snapshots/*
-!tests/visual.spec.ts-snapshots/*-linux.png
+tests/e2e/visual.spec.ts-snapshots/*
+!tests/e2e/visual.spec.ts-snapshots/*-linux.png
 
 # Editor directories and files
 .vscode/*

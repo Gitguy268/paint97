@@ -3,15 +3,13 @@
 // Usage: node scripts/check-budget.mjs        (run after `npm run build`)
 //
 // Measures what users actually download, gzip-compressed:
-//   initial = index.html + linked stylesheets + entry script's static
-//             import graph (first paint)
-//   session = initial + the lazy chunks boot pulls anyway (Excalidraw
-//             stage + @excalidraw/excalidraw/prod, which restore() loads)
-// The session graph is walked by parsing literal dynamic imports and the
-// Vite __vite__mapDeps preload list in the entry chunk; deeper lazy chunks
-// (mermaid/katex/cytoscape, loaded only when used) are intentionally out
-// of scope. Exceeding a budget fails CI, so dependency or code-splitting
-// regressions surface before release.
+//   initial = index.html's stylesheets + the entry script's static import
+//             graph: the desktop shell at first paint
+//   shell   = initial + every lazy chunk the entry names directly (one per
+//             app, plus Clippy). This is also what the service worker precaches.
+// Excalidraw and wllama sit behind a second dynamic import inside their apps,
+// so they are in neither number; if one leaks into the shell (a stray static
+// import), the budget fails by several hundred KiB.
 import fs from "node:fs";
 import path from "node:path";
 import zlib from "node:zlib";
@@ -19,9 +17,9 @@ import zlib from "node:zlib";
 // Budgets in KiB (1024 B), set ~15% above the measured baseline so real
 // regressions fail while healthy churn passes.
 const BUDGET_KIB = {
-  initialJs: 105, // baseline ~91 KiB gz (entry + rolldown runtime)
-  css: 50, // baseline ~40 KiB gz (post font-strip)
-  sessionJs: 500, // baseline ~429 KiB gz (stage + prod static graphs)
+  initialJs: 98, // baseline ~85 KiB gz (React + shell)
+  css: 12, // baseline ~7.5 KiB gz (98.css + win97.css)
+  sessionJs: 140, // baseline ~118 KiB gz (shell + all app chunks, no Excalidraw/wllama)
 };
 
 if (!fs.existsSync("dist/index.html")) {
@@ -77,7 +75,7 @@ const kib = (n) => (n / 1024).toFixed(1);
 const rows = [
   ["initial JS", sum(initial), BUDGET_KIB.initialJs, `${initial.size} chunks`],
   ["CSS", cssBytes, BUDGET_KIB.css, `${cssFiles.length} file(s)`],
-  ["session JS", sum(session), BUDGET_KIB.sessionJs, `${session.size} chunks`],
+  ["shell JS", sum(session), BUDGET_KIB.sessionJs, `${session.size} chunks`],
 ];
 
 const failures = [];
