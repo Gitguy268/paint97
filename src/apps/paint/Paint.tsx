@@ -57,9 +57,9 @@ export default function Paint({ winId }: AppProps) {
     if (!scene) { notify(t("paint.sharedBad")); return; }
     try { await applyScene(a, scene); notify(t("paint.sharedOpened")); } catch { notify(t("paint.sharedBad")); }
   }, [notify, t]);
+  const onApi = useCallback((a: PaintApi) => { setApi(a); void importShared(a); }, [importShared]);
   useEffect(() => {
     if (!api) return;
-    void importShared(api);
     const h = () => void importShared(api);
     window.addEventListener("hashchange", h);
     return () => window.removeEventListener("hashchange", h);
@@ -127,7 +127,7 @@ export default function Paint({ winId }: AppProps) {
         <ToolStrip active={view.tool} onPick={(id: ToolId) => { api?.setActiveTool({ type: id }); pop(); }} />
         <div className="paint-canvas">
           <Suspense fallback={<div className="pane pad">{t("paint.loading")}</div>}>
-            <Stage onApi={setApi} onChange={onChange} onStorageError={() => { notify(t("paint.storageFail")); emitClippy({ kind: "error", message: "storage" }); }} />
+            <Stage onApi={onApi} onChange={onChange} onStorageError={() => { notify(t("paint.storageFail")); emitClippy({ kind: "error", message: "storage" }); }} />
           </Suspense>
         </div>
       </div>

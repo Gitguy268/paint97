@@ -25,7 +25,10 @@ async function rasterize(api: PaintApi): Promise<HTMLCanvasElement> {
   const { exportToCanvas } = await lib();
   return exportToCanvas({ elements: api.getSceneElements(), appState: { ...api.getAppState(), exportBackground: true }, files: api.getFiles() });
 }
-const toBlob = (c: HTMLCanvasElement) => new Promise<Blob>((res, rej) => c.toBlob((b) => (b ? res(b) : rej(new Error("rasterize failed"))), "image/png"));
+const toBlob = (c: HTMLCanvasElement) =>
+  new Promise<Blob>((res, rej) => {
+    c.toBlob((b) => (b ? res(b) : rej(new Error("rasterize failed"))), "image/png");
+  });
 
 function saveBlob(blob: Blob, filename: string) {
   const u = URL.createObjectURL(blob);
