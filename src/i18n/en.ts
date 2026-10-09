@@ -232,6 +232,18 @@ export const en = {
   "calc.errDivZero": "Cannot divide by zero",
   "calc.errOverflow": "Overflow",
   "chat.modelStatus": "{parts} parts · {size}",
+  "sticker.star": "Star",
+  "sticker.rainbow": "Rainbow",
+  "sticker.flame": "Flame",
+  "sticker.idea": "Idea",
+  "sticker.target": "Target",
+  "sticker.party": "Party",
+  "sticker.gem": "Gem",
+  "sticker.rocket": "Rocket",
+  "sticker.sunflower": "Sunflower",
+  "sticker.coffee": "Coffee",
+  "sticker.balloon": "Balloon",
+  "sticker.heart": "Heart",
 } as const;
 
 export type MsgKey = keyof typeof en;

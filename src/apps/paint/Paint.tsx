@@ -1,6 +1,6 @@
 import { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { emitClippy } from "../../clippy/bus.ts";
-import { useT } from "../../i18n/index.ts";
+import { useT, type MsgKey } from "../../i18n/index.ts";
 import { focusedId } from "../../lib/wm.ts";
 import { actions, wm } from "../../shell/wmStore.ts";
 import { decodeScene, encodeScene, SHARE_PREFIX } from "../../lib/share.ts";
@@ -173,7 +173,7 @@ export default function Paint({ winId }: AppProps) {
       { label: t("paint.zoomOut"), onSelect: () => zoomTo(view.zoom / 100 / 1.25) },
       { label: t("paint.zoomReset"), onSelect: () => zoomTo(1) },
     ] },
-    { label: t("paint.stickers"), items: STICKERS.map((s) => ({ label: `${s.glyph}  ${s.name}`, onSelect: () => { if (api) void insertSticker(api, s.glyph).then(click); } })) },
+    { label: t("paint.stickers"), items: STICKERS.map((s) => ({ label: `${s.glyph}  ${t(`sticker.${s.name.toLowerCase()}` as MsgKey)}`, onSelect: () => { if (api) void insertSticker(api, s.glyph).then(click); } })) },
   ];
 
   return (

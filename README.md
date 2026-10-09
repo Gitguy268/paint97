@@ -36,7 +36,7 @@ npm run dev        # http://localhost:7891
 
 - **Desktop shell**: boot screen, six CSS wallpapers, windows that drag, resize, snap to edges, minimise and maximise, with the layout restored on reload. Alt+Tab (or Alt+\` where the browser swallows Alt+Tab) switches windows; the Win key opens Start.
 - **Paint97**: Excalidraw behind a Win98 tool strip and 28-colour palette, with the zoom level in the status bar. Open and save `.excalidraw`, export PNG, SVG or a framed PNG, copy the image to the clipboard, drop stickers, and copy a `#scene=` share link that carries the whole drawing in the URL.
-- **My Drawings and Recycle Bin**: folders, rename (F2), move by drag or Ctrl+X / Ctrl+V, Properties, Delete to the bin, and Ctrl+Z to undo rename, move, delete and restore. Every save keeps a snapshot; autosave adds one at most every two minutes, ten per drawing, listed under Previous versions.
+- **My Drawings and Recycle Bin**: folders, rename (F2), move by drag or Ctrl+X / Ctrl+V, Properties, Delete to the bin, and Ctrl+Z to undo rename, move, delete and restore. Every save keeps a snapshot; autosave adds one at most every two minutes, ten per drawing, listed under Previous versions. Restoring one first snapshots what it replaces. Drawings can also be dragged between two folder windows.
 - **Notepad**: autosave, word wrap, find and replace, `.txt` open and save.
 - **Calculator, Minesweeper, Clock**.
 - **Control Panel**: wallpaper, volume, Liquid Glass, language (English, Dutch), Clippy on/off, personality and size, reduced motion, and one JSON backup of all local data with import and reset.

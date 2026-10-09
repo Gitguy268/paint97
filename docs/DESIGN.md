@@ -44,3 +44,11 @@ A from-scratch rebuild of `win97-excalidraw` ("Paint97") and `clippy-choppy`. Or
 - **Clippy** defaults to scale 2 and sits above the taskbar; his position is remembered. Tip copy is English in all three personalities; the UI around it is translated.
 - **CSP**: the brief asks for `script-src 'self'` + `wasm-unsafe-eval` and also for a version-pinned CDN fallback. The fallback needs one extra `script-src` entry, restricted to the exact package version path.
 - **Tests are typechecked** (`tsconfig.tests.json`), so "strict, no any" covers them too.
+- **Restoring a version** first snapshots the current state if it changed since the last snapshot, so autosaved work is never overwritten without a way back.
+- **Drag and drop** carries the node id on the drag event, so a drawing can be dragged between two My Drawings windows as well as onto a folder row.
+
+## Known gaps
+- English only: Clippy's tip copy, the description in the "Clippy wants to draw" dialog, and model install error messages (they come from framework-free modules that return text).
+- The Clippy CDN fallback is unit-tested with a fake loader, not exercised in a real browser.
+- No e2e coverage for the Win key, the zoom indicator or copy-to-clipboard.
+- macOS visual baselines are local and gitignored; CI writes and owns the Linux set.
