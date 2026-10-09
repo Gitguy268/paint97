@@ -66,11 +66,14 @@ export function Shell({ extraStart, children }: { extraStart?: MenuEntry[]; chil
       if (e.key === "Meta" && metaAlone) { metaAlone = false; setStartOpen((o) => !o); }
       if (e.key === "Alt" && switcher) { const id = switcher.ids[switcher.index]; show(null); if (id) actions.focus(id); }
     };
+    // Cmd/Win+Tab away never delivers the keyup: forget the half-finished chord.
+    const blur = () => { metaAlone = false; if (switcher) show(null); };
     const resize = () => actions.fit();
     window.addEventListener("keydown", down);
     window.addEventListener("keyup", up);
     window.addEventListener("resize", resize);
-    return () => { window.removeEventListener("keydown", down); window.removeEventListener("keyup", up); window.removeEventListener("resize", resize); };
+    window.addEventListener("blur", blur);
+    return () => { window.removeEventListener("blur", blur); window.removeEventListener("keydown", down); window.removeEventListener("keyup", up); window.removeEventListener("resize", resize); };
   }, []);
 
   return (

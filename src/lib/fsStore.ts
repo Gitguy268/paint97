@@ -94,6 +94,23 @@ export const fsOps = {
     for (const old of dropped) await store.del(verKey(id, old)).catch(() => undefined);
   },
 
+  /**
+   * Snapshot the current body if it has changed since the last snapshot. Called before an
+   * older version replaces it, so autosaved-but-unversioned work is never lost to a restore.
+   */
+  async keep(id: string, kv?: KvArg): Promise<void> {
+    const store = await need(kv);
+    const node = fsState.get().fs.nodes[id];
+    if (!node || node.kind !== "file" || node.modifiedAt <= (node.versions.at(-1) ?? 0)) return;
+    const raw = await store.get(bodyKey(id));
+    if (raw === null) return;
+    const at = Date.now();
+    await store.set(verKey(id, at), raw);
+    let dropped: number[] = [];
+    await commit(kv, (fs) => { const r = F.touch(fs, id, raw.length, at, true); dropped = r.dropped; return r.fs; });
+    for (const old of dropped) await store.del(verKey(id, old)).catch(() => undefined);
+  },
+
   read: async (id: string, kv?: KvArg) => fromJson(await (await need(kv)).get(bodyKey(id))),
   readVersion: async (id: string, at: number, kv?: KvArg) => fromJson(await (await need(kv)).get(verKey(id, at))),
 

@@ -1,13 +1,16 @@
+import { t } from "../i18n/index.ts";
+
 // Boot/reload screen: full-desktop overlay shown on initial load until the
 // Excalidraw canvas signals ready. Icon-only 8-bit floppy loader (96px = 2x
 // the original 48px snippet, viewBox untouched so pixels stay 6x crisp).
 export default function BootScreen() {
+  const label = t("boot.loading");
   return (
-    <div className="boot-screen" role="status" aria-label="Loading Paint97">
+    <div className="boot-screen" role="status" aria-label={label}>
       <svg
         className="floppy-loader" viewBox="0 0 16 16"
         xmlns="http://www.w3.org/2000/svg"
-        role="img" aria-label="Loading"
+        aria-hidden="true"
       >
         {/* shell base (chamfered top-left) */}
         <polygon points="3,0 15,0 15,15 0,15 0,3" fill="#000080" />

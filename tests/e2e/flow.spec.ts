@@ -94,6 +94,65 @@ test("folders, F2 rename, properties and previous versions", async ({ page }) =>
   await objectCount(page, 1);
 });
 
+test("restoring an old version first keeps the autosaved work it replaces", async ({ page }) => {
+  await boot(page);
+  await openPaint(page);
+  await drawRect(page);
+  await page.keyboard.press("Control+s");
+  await page.getByLabel("Name").fill("keeper");
+  await page.keyboard.press("Enter");
+  await expect(page.locator(".paint .status-bar")).toContainText("Saved");
+  await drawRect(page, 180); // never explicitly saved: only the autosave has it
+  await objectCount(page, 2);
+  await page.waitForTimeout(900);
+
+  await page.getByRole("menuitem", { name: "File" }).click();
+  await page.getByRole("menuitem", { name: "Previous versions" }).click();
+  await expect(dialog(page).getByRole("button", { name: "Restore" })).toHaveCount(1);
+  await dialog(page).getByRole("button", { name: "Restore" }).click();
+  await objectCount(page, 1);
+
+  // The two-rectangle state is now a version of its own and can be brought back.
+  await page.getByRole("menuitem", { name: "File" }).click();
+  await page.getByRole("menuitem", { name: "Previous versions" }).click();
+  await expect(dialog(page).getByRole("button", { name: "Restore" })).toHaveCount(2);
+  await dialog(page).getByRole("button", { name: "Restore" }).first().click(); // newest first
+  await objectCount(page, 2);
+});
+
+test("drag a drawing into a folder, and across two folder windows", async ({ page }) => {
+  await boot(page);
+  await openPaint(page);
+  await drawRect(page);
+  await page.keyboard.press("Control+s");
+  await page.getByLabel("Name").fill("mover");
+  await page.keyboard.press("Enter");
+  await expect(page.locator(".paint .status-bar")).toContainText("Saved");
+  await win(page, /Paint97/).getByRole("button", { name: "Minimize" }).click();
+
+  await page.locator('[data-app="drawings"]').dblclick();
+  const a = page.locator("section.win", { has: page.locator(".exp") }).nth(0);
+  await a.getByRole("button", { name: "New folder" }).click();
+  await dialog(page).getByLabel("Name").fill("Box");
+  await page.keyboard.press("Enter");
+
+  // Same window: file row onto folder row.
+  await a.getByRole("option", { name: /mover/ }).dragTo(a.getByRole("option", { name: /Box/ }));
+  await expect(a.getByRole("option", { name: /mover/ })).toHaveCount(0);
+  await a.getByRole("option", { name: /Box/ }).dblclick();
+  await expect(a.getByRole("option", { name: /mover/ })).toHaveCount(1);
+
+  // Second window showing the root: drag from the first window's folder into its list.
+  await page.locator('[data-app="drawings"]').dblclick();
+  const b = page.locator("section.win", { has: page.locator(".exp") }).nth(1);
+  await page.evaluate(() => undefined);
+  await b.locator(".title-bar").dragTo(page.locator(".desktop-area"), { targetPosition: { x: 900, y: 420 } });
+  await a.getByRole("option", { name: /mover/ }).dragTo(b.getByRole("listbox"), { targetPosition: { x: 200, y: 150 } });
+  await expect(b.getByRole("option", { name: /mover/ })).toHaveCount(1);
+  await expect(a.getByRole("option", { name: /mover/ })).toHaveCount(0);
+  await page.keyboard.press("Control+z"); // moves are undoable
+});
+
 test("share link round-trips a drawing into a fresh profile", async ({ page, browser }) => {
   await boot(page);
   await openPaint(page);

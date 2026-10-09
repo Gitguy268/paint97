@@ -227,4 +227,10 @@ export const nl: Record<MsgKey, string> = {
   "wp.clouds": "Wolken",
   "wp.sunset": "Zonsondergang",
   "wp.grid": "Raster",
+  "ui.error": "Fout",
+  "ui.retry": "Opnieuw",
+  "calc.errInput": "Ongeldige invoer",
+  "calc.errDivZero": "Kan niet delen door nul",
+  "calc.errOverflow": "Overloop",
+  "chat.modelStatus": "{parts} delen · {size}",
 };

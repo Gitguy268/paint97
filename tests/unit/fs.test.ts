@@ -102,6 +102,20 @@ test("write keeps a previous version that can be read back", async () => {
   assert.equal(fsState.get().fs.nodes[id]!.versions.length, 2);
 });
 
+test("keep() snapshots autosaved work exactly once, so restoring an old version can't lose it", async () => {
+  const id = await fsOps.create("v", null, scene(1), kv);
+  await new Promise<void>((r) => { setTimeout(r, 2); });
+  await fsOps.write(id, scene(5), false, kv); // autosave inside the gap: body only
+  assert.equal(fsState.get().fs.nodes[id]!.versions.length, 1);
+  await new Promise<void>((r) => { setTimeout(r, 2); });
+  await fsOps.keep(id, kv);
+  const versions = fsState.get().fs.nodes[id]!.versions;
+  assert.equal(versions.length, 2);
+  assert.equal((await fsOps.readVersion(id, versions[1]!, kv))?.elements.length, 5);
+  await fsOps.keep(id, kv); // nothing changed since: no duplicate
+  assert.equal(fsState.get().fs.nodes[id]!.versions.length, 2);
+});
+
 test("trash / restore / rename / move are undoable; purge deletes bodies and clears undo", async () => {
   const id = await fsOps.create("doc", null, scene(1), kv);
   await fsOps.newFolder("Folder", null, kv);

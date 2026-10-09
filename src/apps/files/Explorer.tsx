@@ -1,7 +1,7 @@
 // One Explorer-style folder window with two faces: My Drawings (folders, open,
 // rename, move, bin) and the Recycle Bin (restore, delete, empty).
 // APG listbox: the list keeps focus, aria-activedescendant follows the selection.
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import { useT } from "../../i18n/index.ts";
 import { children, isLive, pathOf, trashed, type FsNode } from "../../lib/fs.ts";
 import { fsOps, fsState } from "../../lib/fsStore.ts";
@@ -12,6 +12,8 @@ import { openInPaint } from "../paint/session.ts";
 import { VersionList } from "./VersionList.tsx";
 
 const fmtSize = (chars: number) => (chars < 1024 ? `${chars} B` : `${(chars / 1024).toFixed(1)} KB`);
+/** Drag payload type: carried on the event itself, so a row can be dropped into another folder window. */
+const DRAG_TYPE = "application/x-paint97-node";
 type Ask = { text: string; run: () => void };
 type Prompt = { title: string; value: string; run: (v: string) => void };
 
@@ -26,7 +28,6 @@ export function Explorer({ bin }: { bin: boolean }) {
   const [ask, setAsk] = useState<Ask | null>(null);
   const [prompt, setPrompt] = useState<Prompt | null>(null);
   const [propsId, setPropsId] = useState<string | null>(null);
-  const dragId = useRef<string | null>(null);
 
   // A folder that was binned or deleted elsewhere drops this window back to the root.
   const cwd = cwdRaw && isLive(fs, cwdRaw) ? cwdRaw : null;
@@ -78,8 +79,13 @@ export function Explorer({ bin }: { bin: boolean }) {
   };
 
   const dropOn = (parent: string | null) => ({
-    onDragOver: (e: React.DragEvent) => { if (dragId.current) e.preventDefault(); },
-    onDrop: (e: React.DragEvent) => { e.preventDefault(); const id = dragId.current; dragId.current = null; if (id && id !== parent) moveTo(id, parent); },
+    onDragOver: (e: React.DragEvent) => { if (e.dataTransfer.types.includes(DRAG_TYPE)) { e.preventDefault(); e.stopPropagation(); e.dataTransfer.dropEffect = "move"; } },
+    onDrop: (e: React.DragEvent) => {
+      const id = e.dataTransfer.getData(DRAG_TYPE);
+      if (!id) return;
+      e.preventDefault(); e.stopPropagation(); // a folder row wins over the list behind it
+      if (id !== parent) moveTo(id, parent);
+    },
   });
 
   return (
@@ -110,6 +116,7 @@ export function Explorer({ bin }: { bin: boolean }) {
         aria-activedescendant={cur ? `${uid}-${cur.id}` : undefined}
         onKeyDown={onKey}
         onClick={(e) => { if (e.target === e.currentTarget) setSel(null); }}
+        {...(bin ? {} : dropOn(cwd))}
       >
         {/* Messages are disabled options: a listbox must own at least one option. */}
         {loaded && entries.length === 0 && <div role="option" aria-selected="false" aria-disabled="true" className="exp-msg">{bin ? t("files.binEmpty") : t("files.folderEmpty")}</div>}
@@ -118,8 +125,7 @@ export function Explorer({ bin }: { bin: boolean }) {
             key={n.id} id={`${uid}-${n.id}`} role="option" aria-selected={n.id === sel}
             className={`exp-row ${n.id === sel ? "selected" : ""} ${n.id === cut ? "cut" : ""}`}
             draggable={!bin}
-            onDragStart={(e) => { dragId.current = n.id; e.dataTransfer.effectAllowed = "move"; e.dataTransfer.setData("text/plain", n.name); }}
-            onDragEnd={() => { dragId.current = null; }}
+            onDragStart={(e) => { e.dataTransfer.effectAllowed = "move"; e.dataTransfer.setData(DRAG_TYPE, n.id); e.dataTransfer.setData("text/plain", n.name); }}
             {...(!bin && n.kind === "folder" ? dropOn(n.id) : {})}
             onClick={() => { setSel(n.id); click(); }}
             onDoubleClick={() => primary(n)}

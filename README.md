@@ -1,4 +1,4 @@
-# win97-excalidraw (Paint97)
+# gitguy/win97-excalidraw (Paint97)
 
 A Windows 9x desktop in the browser, built around an [Excalidraw](https://excalidraw.com) whiteboard. It boots to a teal desktop with draggable windows, a Start menu and a taskbar, and ships Paint97, Notepad, a My Drawings folder with a Recycle Bin, Calculator, Minesweeper, Clock, a Control Panel, and Clippy, who can also chat and draw using a model that runs on your device.
 

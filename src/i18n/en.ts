@@ -226,6 +226,12 @@ export const en = {
   "wp.clouds": "Clouds",
   "wp.sunset": "Sunset",
   "wp.grid": "Grid",
+  "ui.error": "Error",
+  "ui.retry": "Retry",
+  "calc.errInput": "Invalid input",
+  "calc.errDivZero": "Cannot divide by zero",
+  "calc.errOverflow": "Overflow",
+  "chat.modelStatus": "{parts} parts · {size}",
 } as const;
 
 export type MsgKey = keyof typeof en;

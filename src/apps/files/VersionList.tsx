@@ -1,5 +1,5 @@
-// "Previous versions" of one drawing. Restoring opens that snapshot in Paint97,
-// bound to the same file, so the next save makes it the current version.
+// "Previous versions" of one drawing. Restoring opens that snapshot in Paint97 bound to
+// the same file, where autosave makes it current. What it replaces is snapshotted first.
 import { useT } from "../../i18n/index.ts";
 import type { FsNode } from "../../lib/fs.ts";
 import { fsOps } from "../../lib/fsStore.ts";
@@ -11,6 +11,7 @@ export function VersionList({ node, onDone, onError }: { node: FsNode; onDone: (
     try {
       const scene = await fsOps.readVersion(node.id, at);
       if (!scene) { onError(); return; }
+      await fsOps.keep(node.id);
       openInPaint({ scene, name: node.name, fileId: node.id });
       onDone();
     } catch { onError(); }

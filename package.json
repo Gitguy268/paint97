@@ -1,5 +1,7 @@
 {
   "name": "@gitguy/win97-excalidraw",
+  "description": "A Windows 9x desktop in the browser around an Excalidraw whiteboard. Fully client-side.",
+  "repository": "github:gitguy/win97-excalidraw",
   "private": true,
   "version": "1.0.0",
   "type": "module",
@@ -48,6 +50,5 @@
     "nanoid": "3.3.19",
     "chevrotain": "11.1.2",
     "sass": "1.105.1"
-  },
-  "description": "A Windows 9x desktop in the browser around an Excalidraw whiteboard. Fully client-side."
+  }
 }

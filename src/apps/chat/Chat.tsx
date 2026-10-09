@@ -6,7 +6,7 @@ import { useT } from "../../i18n/index.ts";
 import { buildSystemPrompt, cleanReply, describeCommand, messagesForRequest, splitCanvasCommand, summarizeScene, type CanvasCommand, type ChatMsg } from "../../lib/localAi/chat.ts";
 import { isAbortError, type DownloadProgress } from "../../lib/localAi/model.ts";
 import { MODEL_STATE0, modelReducer, percent } from "../../lib/localAi/modelState.ts";
-import { browserSupport, createEngine, deleteModelFromCache, installModelToCache, isModelCached, modelSizeLabel, modelStatusLabel, type Engine } from "../../lib/localAi/runtime.ts";
+import { browserSupport, createEngine, deleteModelFromCache, installModelToCache, isModelCached, MODEL_PARTS, modelSizeLabel, type Engine } from "../../lib/localAi/runtime.ts";
 import { errorBeep } from "../../lib/sound.ts";
 import { Dialog } from "../../ui/Dialog.tsx";
 import { canvasCmd, paintApi } from "../paint/session.ts";
@@ -175,7 +175,7 @@ export default function Chat() {
         {busy ? <button type="button" onClick={stop}>{t("chat.stop")}</button> : <button type="submit" disabled={!input.trim()}>{t("chat.send")}</button>}
       </form>
       <div className="chat-model">
-        <span>{modelStatusLabel()}</span>
+        <span>{t("chat.modelStatus", { parts: MODEL_PARTS, size: modelSizeLabel() })}</span>
         {storage && <span>{t("chat.storage", { used: mb(storage.usage), quota: mb(storage.quota) })}</span>}
         <button disabled={busy} onClick={() => setConfirmRemove(true)}>{t("chat.remove")}</button>
       </div>

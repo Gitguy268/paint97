@@ -1,5 +1,5 @@
 {
-  "name": "win97-excalidraw (Paint97)",
+  "name": "gitguy/win97-excalidraw (Paint97)",
   "short_name": "Paint97",
   "description": "A Windows 9x desktop around an Excalidraw whiteboard, with an on-device assistant. Drawings, notes and the model stay on your device.",
   "start_url": "./",

@@ -102,10 +102,7 @@ export function modelSizeLabel(): string {
   return `${Math.round(MODEL_MANIFEST.totalBytes / 1e6)} MB`;
 }
 
-/** "6 parts · 253 MB" — the model-manager status line's facts. */
-export function modelStatusLabel(): string {
-  return `${MODEL_MANIFEST.parts.length} parts · ${modelSizeLabel()}`;
-}
+export const MODEL_PARTS = MODEL_MANIFEST.parts.length;
 
 // --- runtime ----------------------------------------------------------------
 

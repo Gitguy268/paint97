@@ -1,7 +1,7 @@
 // Layout + key binding only: the arithmetic is the tokenizer/parser in lib/calc.ts (never eval).
 import { useEffect, useRef, useState } from "react";
 import { useT } from "../../i18n/index.ts";
-import { CALC_INITIAL, pressKey, type CalcState } from "../../lib/calc.ts";
+import { CALC_INITIAL, ERR_DIV_ZERO, ERR_INPUT, ERR_OVERFLOW, pressKey, type CalcState } from "../../lib/calc.ts";
 import type { MsgKey } from "../../i18n/en.ts";
 
 const KEYS: readonly { k: string; aria?: MsgKey }[] = [
@@ -11,6 +11,7 @@ const KEYS: readonly { k: string; aria?: MsgKey }[] = [
   { k: "1" }, { k: "2" }, { k: "3" }, { k: "−", aria: "calc.minus" },
   { k: "0" }, { k: "." }, { k: "=", aria: "calc.equals" }, { k: "+", aria: "calc.plus" },
 ];
+const ERR_KEY: Record<string, MsgKey> = { [ERR_INPUT]: "calc.errInput", [ERR_DIV_ZERO]: "calc.errDivZero", [ERR_OVERFLOW]: "calc.errOverflow" };
 const KEYMAP: Record<string, string> = {
   "0": "0", "1": "1", "2": "2", "3": "3", "4": "4", "5": "5", "6": "6", "7": "7", "8": "8", "9": "9",
   ".": ".", "+": "+", "-": "−", "*": "×", "/": "÷", "(": "(", ")": ")",
@@ -34,7 +35,7 @@ export default function Calculator() {
         press(k);
       }}
     >
-      <div className="calc-display" role="status">{s.err ?? (s.expr || "0")}</div>
+      <div className="calc-display" role="status">{s.err ? t(ERR_KEY[s.err] ?? "calc.errInput") : s.expr || "0"}</div>
       <div className="calc-keys">
         {KEYS.map(({ k, aria }) => <button key={k} tabIndex={-1} aria-label={aria ? t(aria) : k} onClick={() => press(k)}>{k}</button>)}
       </div>
