@@ -1,0 +1,43 @@
+{
+  "model": "Gemma 3 270M IT",
+  "quant": "Q4_K_M",
+  "file": "gemma-3-270M-it-Q4_K_M.gguf",
+  "source": "https://huggingface.co/lm-kit/gemma-3-270m-instruct-gguf",
+  "license": "Gemma Terms of Use (Google) — credited in NOTICE",
+  "repo": "gitguy268/win97-excalidraw",
+  "ref": "main",
+  "totalBytes": 253114976,
+  "sha256": "e28b323bc75925d6edc8d3f030268830bf53c59c296d77278ac24653403d9d47",
+  "parts": [
+    {
+      "file": "gemma-3-270M-it-Q4_K_M.gguf-00001-of-00006.part",
+      "bytes": 42185830,
+      "sha256": "311f5cf8b2f89d6bf52dd4433e6977988e2c93117954be02e12d2d5878f9bcd9"
+    },
+    {
+      "file": "gemma-3-270M-it-Q4_K_M.gguf-00002-of-00006.part",
+      "bytes": 42185830,
+      "sha256": "ea3074ebb5dab1c2cbae67ada517e1a5a95e8f20cbd44a34dc88c4e93fc9838d"
+    },
+    {
+      "file": "gemma-3-270M-it-Q4_K_M.gguf-00003-of-00006.part",
+      "bytes": 42185830,
+      "sha256": "15282c4086eb604179acae360514743661da863f1791b9c3f9e56fe89b453401"
+    },
+    {
+      "file": "gemma-3-270M-it-Q4_K_M.gguf-00004-of-00006.part",
+      "bytes": 42185830,
+      "sha256": "292477caaeb8acfa21bbe255e422d7bd1706e273b41f46ca1f99f06f2bf0e23f"
+    },
+    {
+      "file": "gemma-3-270M-it-Q4_K_M.gguf-00005-of-00006.part",
+      "bytes": 42185830,
+      "sha256": "0f06a48cc51ada4d1ed329658299fd7039261a9b80c26b0717e1d7e565df51ee"
+    },
+    {
+      "file": "gemma-3-270M-it-Q4_K_M.gguf-00006-of-00006.part",
+      "bytes": 42185826,
+      "sha256": "8362bf5aac5a93279962134b4546f770249a78135fa8c6cf48aa8e1233bb3388"
+    }
+  ]
+}

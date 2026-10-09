@@ -1,0 +1,92 @@
+/* Win9x chrome on top of 98.css (window, title-bar, buttons, status-bar, tabs). Opaque, square, no transitions. */
+:root {
+  --face: #c0c0c0; --shadow: #808080; --dark: #0a0a0a; --hi: #fff;
+  --navy: #000080; --navy2: #1084d0; --teal: #008080;
+  --tb: 30px;
+}
+@font-face { font-family: "MS Sans Serif"; font-weight: 400; src: url("98.css/dist/ms_sans_serif.woff2") format("woff2"); }
+@font-face { font-family: "MS Sans Serif"; font-weight: 700; src: url("98.css/dist/ms_sans_serif_bold.woff2") format("woff2"); }
+*, *::before, *::after { box-sizing: border-box; transition: none !important; }
+html, body, #root { margin: 0; height: 100%; width: 100%; overflow: hidden; }
+body { font-family: "Pixelated MS Sans Serif", "MS Sans Serif", Tahoma, sans-serif; font-size: 11px; color: #000; background: var(--teal); user-select: none; -webkit-font-smoothing: none; }
+input, textarea, select { user-select: text; }
+:focus-visible { outline: 1px dotted #000; outline-offset: -4px; }
+
+/* desktop */
+.desktop { position: fixed; inset: 0; display: flex; flex-direction: column; background: var(--teal); }
+.desktop-area { position: relative; flex: 1; min-height: 0; overflow: hidden; }
+.desktop-icons { position: absolute; top: 12px; left: 12px; display: flex; flex-direction: column; gap: 14px; z-index: 1; }
+.desk-icon { width: 76px; padding: 0; text-align: center; color: #fff; background: none; border: 1px dotted transparent; box-shadow: none; min-width: 0; min-height: 0; }
+.desk-icon:focus-visible { outline: 1px dotted #fff; outline-offset: 2px; }
+.desk-icon .glyph { display: block; font-size: 28px; line-height: 1.1; filter: drop-shadow(1px 1px 0 rgba(0,0,0,.5)); }
+.desk-icon .label { display: inline-block; margin-top: 3px; padding: 1px 2px; }
+.desk-icon.selected .label { background: var(--navy); outline: 1px dotted #fff; }
+
+/* windows */
+.win { position: absolute; display: flex; flex-direction: column; padding: 3px; min-width: 0; }
+.win.maximized { padding: 3px; }
+.win .title-bar { flex: none; touch-action: none; }
+.win .title-bar.inactive { background: linear-gradient(90deg, #808080, #b5b5b5); }
+.title-icon { font-size: 12px; margin-right: 4px; }
+.win-content { flex: 1; min-height: 0; margin: 0 !important; padding: 0; display: flex; flex-direction: column; overflow: hidden; position: relative; }
+.pane { flex: 1; min-height: 0; overflow: auto; background: var(--face); }
+.pad { padding: 8px; }
+.rz { position: absolute; z-index: 2; touch-action: none; }
+.rz-n, .rz-s { left: 6px; right: 6px; height: 4px; cursor: ns-resize; } .rz-n { top: -1px; } .rz-s { bottom: -1px; }
+.rz-e, .rz-w { top: 6px; bottom: 6px; width: 4px; cursor: ew-resize; } .rz-e { right: -1px; } .rz-w { left: -1px; }
+.rz-ne, .rz-nw, .rz-se, .rz-sw { width: 8px; height: 8px; }
+.rz-ne { top: -1px; right: -1px; cursor: nesw-resize; } .rz-nw { top: -1px; left: -1px; cursor: nwse-resize; }
+.rz-se { bottom: -1px; right: -1px; cursor: nwse-resize; } .rz-sw { bottom: -1px; left: -1px; cursor: nesw-resize; }
+
+/* taskbar */
+.taskbar { height: var(--tb); display: flex; align-items: stretch; gap: 4px; padding: 2px 3px; background: var(--face); border-top: 1px solid var(--hi); box-shadow: inset 0 1px 0 #dfdfdf; position: relative; z-index: 1000; }
+.start-btn { display: flex; align-items: center; gap: 4px; min-width: 0; padding: 0 8px; }
+.start-btn.pressed { box-shadow: inset -1px -1px #fff, inset 1px 1px #0a0a0a, inset -2px -2px #dfdfdf, inset 2px 2px #808080; }
+.logo { width: 16px; height: 16px; border: 1px solid #000; background: linear-gradient(135deg, #f00 0 25%, #0f0 25% 50%, #00f 50% 75%, #ff0 75%); }
+.task-items { flex: 1; display: flex; gap: 3px; overflow: hidden; min-width: 0; }
+.task-item { flex: 0 1 160px; min-width: 40px; display: flex; align-items: center; gap: 4px; padding: 0 6px; text-align: left; justify-content: flex-start; }
+.task-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.task-item.active { font-weight: bold; box-shadow: inset -1px -1px #fff, inset 1px 1px #0a0a0a, inset -2px -2px #dfdfdf, inset 2px 2px #808080; background: repeating-conic-gradient(#dfdfdf 0 25%, var(--face) 0 50%) 0 0/2px 2px; }
+.tray { display: flex; align-items: center; gap: 6px; padding: 0 8px; box-shadow: inset -1px -1px #fff, inset 1px 1px #808080; }
+.tray-btn { min-width: 0; min-height: 0; padding: 0 2px; border: 0; box-shadow: none; background: none; }
+
+/* menus */
+.menu-list { list-style: none; margin: 0; padding: 2px; background: var(--face); min-width: 190px; box-shadow: inset -1px -1px #0a0a0a, inset 1px 1px #fff, inset -2px -2px #808080, inset 2px 2px #dfdfdf, 3px 3px 0 rgba(0,0,0,.35); }
+.menu-list button { display: flex; align-items: center; gap: 8px; width: 100%; min-width: 0; min-height: 0; padding: 4px 12px 4px 6px; border: 0; box-shadow: none; background: none; text-align: left; }
+.menu-list button:hover:not(:disabled), .menu-list button:focus-visible { background: var(--navy); color: #fff; outline: 0; }
+.menu-list button:disabled { color: var(--shadow); text-shadow: 1px 1px 0 #fff; }
+.menu-list kbd { margin-left: auto; font: inherit; opacity: .8; }
+.menu-icon { width: 18px; text-align: center; font-size: 14px; }
+.menu-sep { height: 2px; margin: 3px 2px; border-top: 1px solid var(--shadow); border-bottom: 1px solid #fff; }
+.menubar { display: flex; gap: 0; padding: 1px 2px; background: var(--face); position: relative; z-index: 30; flex: none; }
+.menubar-item { position: relative; }
+.menubar-item > button { min-width: 0; min-height: 0; border: 0; box-shadow: none; background: none; padding: 3px 8px; }
+.menubar-item > button:hover, .menubar-item > button.open, .menubar-item > button:focus-visible { background: var(--navy); color: #fff; outline: 0; }
+.menu-drop { position: absolute; top: 100%; left: 0; z-index: 50; }
+.start-menu { position: absolute; left: 2px; bottom: var(--tb); z-index: 999; display: flex; background: var(--face); box-shadow: inset -1px -1px #0a0a0a, inset 1px 1px #fff, inset -2px -2px #808080, inset 2px 2px #dfdfdf; padding: 3px; }
+.start-banner { width: 24px; background: linear-gradient(0deg, var(--navy), var(--navy2)); color: #fff; position: relative; margin-right: 2px; }
+.start-banner span { position: absolute; bottom: 6px; left: 3px; writing-mode: vertical-rl; transform: rotate(180deg); font-size: 16px; }
+.start-menu .menu-list { box-shadow: none; padding: 0; min-width: 200px; }
+.start-menu .menu-list button { padding: 7px 10px 7px 6px; }
+
+/* dialogs */
+.modal-scrim { position: fixed; inset: 0; z-index: 3000; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,.25); }
+.dialog { min-width: 280px; max-width: min(92vw, 520px); }
+.dialog-buttons { display: flex; justify-content: flex-end; gap: 6px; margin-top: 12px; }
+
+/* alt-tab switcher */
+.switcher { position: fixed; z-index: 4000; left: 50%; top: 40%; transform: translateX(-50%); }
+.sw-item { display: flex; align-items: center; gap: 8px; padding: 4px 10px; min-width: 220px; }
+.sw-item.sel { background: var(--navy); color: #fff; }
+.sw-item .glyph { font-size: 20px; }
+
+/* settings */
+.settings fieldset { margin-bottom: 8px; }
+.settings .field-row { margin: 4px 0; }
+
+/* Liquid Glass (opt-in) is the only place rounded corners / translucency are allowed. */
+.glass-on .window { background: rgba(255,255,255,.55); backdrop-filter: blur(12px) saturate(150%); border-radius: 10px; }
+.glass-on .window .title-bar { border-radius: 8px 8px 0 0; }
+.glass-on .taskbar { background: rgba(255,255,255,.45); backdrop-filter: blur(12px); }
+@media (prefers-reduced-motion: reduce) { * { animation-duration: 0s !important; animation-iteration-count: 1 !important; } }
+.win .title-bar-text { flex: 1; text-align: left; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

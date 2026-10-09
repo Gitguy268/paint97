@@ -1,0 +1,44 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# Environment files — real values only via env vars / CI secrets.
+# .env.example (placeholders) is committed.
+.env
+.env.*
+!.env.example
+
+# Vercel CLI (contains org/project ids)
+.vercel/
+
+# Test artifacts
+test-results/
+playwright-report/
+/lcov.info
+
+# Visual baselines: CI (Linux) commits its own set; other platforms are
+# local-only because font rendering differs per OS.
+tests/visual.spec.ts-snapshots/*
+!tests/visual.spec.ts-snapshots/*-linux.png
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+public/fonts/

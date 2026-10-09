@@ -1,0 +1,4 @@
+# The split on-device model (scripts/prepare-model.mjs): opaque binaries —
+# no text diffs, no merges, no line-ending normalisation.
+models/*.part binary
+models/*.gguf binary

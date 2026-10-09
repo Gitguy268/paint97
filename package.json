@@ -1,0 +1,50 @@
+{
+  "name": "win97-excalidraw",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "engines": {
+    "node": ">=20.19.0"
+  },
+  "scripts": {
+    "predev": "node scripts/copy-fonts.mjs",
+    "dev": "vite",
+    "prebuild": "node scripts/copy-fonts.mjs",
+    "build": "tsc -b && vite build && node scripts/gen-sw.mjs",
+    "typecheck": "tsc -b",
+    "lint": "oxlint",
+    "preview": "vite preview",
+    "test": "npm run test:unit",
+    "test:unit": "node --test tests/unit/*.test.ts",
+    "test:e2e": "playwright test",
+    "check:csp": "node scripts/check-csp-sync.mjs",
+    "check:assets": "node scripts/check-assets.mjs",
+    "check:budget": "node scripts/check-budget.mjs",
+    "model:verify": "node scripts/prepare-model.mjs --verify"
+  },
+  "dependencies": {
+    "@excalidraw/excalidraw": "0.18.1",
+    "@wllama/wllama": "3.8.1",
+    "98.css": "0.1.21",
+    "react": "19.3.0",
+    "react-dom": "19.3.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.63.0",
+    "@types/node": "24.13.5",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "@vitejs/plugin-react": "6.1.1",
+    "axe-core": "4.14.0",
+    "esbuild": "0.28.2",
+    "oxlint": "1.83.0",
+    "typescript": "6.0.3",
+    "vite": "8.3.0"
+  },
+  "overrides": {
+    "lodash-es": "4.18.1",
+    "nanoid": "3.3.19",
+    "chevrotain": "11.1.2",
+    "sass": "1.105.1"
+  }
+}

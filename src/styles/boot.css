@@ -1,0 +1,49 @@
+/* Boot/reload screen — full-desktop overlay, icon-only 8-bit floppy loader.
+   Palette tokens (--teal etc.) come from win97.css; only icon-level rules
+   live here. Overlay unmounts (no fade) once the canvas is ready — instant
+   removal fits the choppy Win98 aesthetic used by Clippy. */
+.boot-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--teal, #008080);
+}
+
+/* ---- icon (2x the original 48px snippet; viewBox untouched) ---- */
+.floppy-loader {
+  width: 96px;
+  height: 96px;
+  display: block;
+  shape-rendering: crispEdges;   /* keep hard 8-bit edges */
+  image-rendering: pixelated;
+}
+
+/* metal shutter slides open, holds, snaps shut */
+.floppy-loader .shutter {
+  transform-box: fill-box;
+  animation: floppy-seek 1.6s infinite steps(8);
+}
+
+@keyframes floppy-seek {
+  0%, 20%  { transform: translateX(0); }
+  40%, 80% { transform: translateX(4px); }
+  100%     { transform: translateX(0); }
+}
+
+/* small activity LED blink */
+.floppy-loader .led {
+  animation: led-blink 1.2s infinite;
+}
+
+@keyframes led-blink {
+  0%, 49%   { opacity: 1; }
+  50%, 100% { opacity: 0.15; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .floppy-loader .shutter,
+  .floppy-loader .led { animation: none; }
+}
