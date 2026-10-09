@@ -188,5 +188,5 @@ test("readSceneFile rejects malformed and hostile input", async () => {
     size: 1024,
     text: () => Promise.resolve(JSON.stringify({ elements: new Array(100_001).fill(0) })),
   };
-  await assert.rejects(readSceneFile(tooMany), /too many elements/);
+  await assert.rejects(readSceneFile(tooMany as unknown as File), /too many elements/);
 });

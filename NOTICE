@@ -10,28 +10,19 @@ RUNTIME DEPENDENCIES
 Excalidraw — @excalidraw/excalidraw 0.18.1 — MIT
   https://github.com/excalidraw/excalidraw
   The canvas text faces (Excalifont/Virgil hand-drawn styles and the UI
-  fallback families) are fetched at runtime from Excalidraw's own font
-  assets and are NOT redistributed by this project. If you self-host them
-  (see "Font origin" in README.md), review each family's licence first:
-  the hand-drawn faces are published by Excalidraw under CC BY 4.0, most
-  UI families are SIL OFL 1.1. This project removes esm.sh from its CSP
-  only when those fonts are served locally.
+  fallback families: Assistant, Cascadia, Comic Shanns, Liberation, Lilita,
+  Nunito, Xiaolai) are copied unmodified from the npm package into
+  public/fonts at build time (scripts/copy-fonts.mjs; not committed) and
+  served from this project's own origin, so a deployed build DOES
+  redistribute them. Review each family's licence before publishing a
+  build: per Excalidraw, the hand-drawn faces are CC BY 4.0 and most UI
+  families are SIL OFL 1.1. The npm package ships no licence files next
+  to the fonts; the upstream repository is the reference.
 
 98.css 0.1.21 — MIT — Copyright (c) 2020 Jordan Scales
   https://github.com/jdan/98.css
   Ships the "Pixelated MS Sans Serif" web font that serves as Paint97's
   UI face (replacing a proprietary TTF that was NOT redistributable).
-
-@react95/core 9.8.4 — MIT — React95
-  https://github.com/React95/React95
-  Its GlobalStyle embeds three base64 @font-face data URIs of Microsoft
-  Sans Serif (© Microsoft; conversion by LR Software) that carry no
-  redistribution grant. The build strips those rules (stripEmbeddedFonts
-  in vite.config.ts) so they never reach dist/, and re-declares the
-  "MS Sans Serif" family name over 98.css's MIT pixel faces instead;
-  scripts/check-assets.mjs fails if an embedded font ever reappears.
-  react95's MIT code (style resets, scrollbar styling, components) is
-  used normally.
 
 react / react-dom 19.3.0 — MIT — Meta Platforms, Inc.
 
@@ -68,15 +59,15 @@ lm-kit: https://huggingface.co/lm-kit/gemma-3-270m-instruct-gguf
   (https://ai.google.dev/gemma/terms), which permit redistribution of the
   weights with attribution — hence this notice. The 253 MB file is split
   into six ~42 MB parts committed under models/ and fetched at runtime
-  from raw.githubusercontent.com; scripts/prepare-model.mjs records every
+  from this origin's /models/ when present, else raw.githubusercontent.com; scripts/prepare-model.mjs records every
   part's size and SHA-256 in models/manifest.json and the app refuses any
   part that does not match.
 
 DESIGN / CODE CREDITS
 ---------------------
-- W95Tabs Tabs/Group API modeled on irskep/ninetyfive (MIT).
-- Glass edge-light technique adapted from GANSGX/liquid-glass-css (MIT).
-- Win9x desktop recreated with 98.css + @react95/core (both MIT).
+- Win9x desktop chrome built on 98.css (MIT).
+- Clippy engine: original code, merged from this author's clippy-choppy and
+  the earlier Paint97 copy of it; API shape follows clippyjs (MIT).
 
 DEVELOPMENT TOOLCHAIN (not shipped in dist/)
 --------------------------------------------
