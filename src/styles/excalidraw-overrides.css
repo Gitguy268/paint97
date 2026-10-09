@@ -1,0 +1,27 @@
+/* Win98 skin over Excalidraw. Our own tool strip + palette replace the floating toolbar. */
+.excali-host .excalidraw {
+  --color-primary: #000080; --color-primary-darker: #000060; --color-primary-darkest: #000040;
+  --color-primary-light: #e0e0ff; --color-primary-hover: #1084d0; --color-brand-active: #000080;
+  --color-surface-low: #dfdfdf; --color-surface-mid: #c0c0c0; --color-surface-high: #c0c0c0;
+  --color-on-surface: #000; --color-border: #808080;
+  --radius-sm: 0; --radius-md: 0; --radius-lg: 0;
+  --shadow-island: none;
+  font-family: "Pixelated MS Sans Serif", "MS Sans Serif", Tahoma, sans-serif;
+}
+.excali-host .App-toolbar-container { display: none; }
+.excali-host .excalidraw .Island, .excali-host .excalidraw .dropdown-menu, .excali-host .excalidraw .popover, .excali-host .excalidraw .Modal__content, .excali-host .excalidraw .picker {
+  border-radius: 0 !important; border: 0 !important;
+  background: #c0c0c0 !important;
+  box-shadow: inset -1px -1px #0a0a0a, inset 1px 1px #fff, inset -2px -2px #808080, inset 2px 2px #dfdfdf !important;
+}
+.excali-host .excalidraw button, .excali-host .excalidraw .ToolIcon__icon, .excali-host .excalidraw .dropdown-menu-item { border-radius: 0 !important; }
+.excali-host .excalidraw .ToolIcon__icon, .excali-host .excalidraw .undo-redo-buttons button, .excali-host .excalidraw .main-menu-trigger {
+  background: #c0c0c0 !important; border: 0 !important;
+  box-shadow: inset -1px -1px #0a0a0a, inset 1px 1px #fff, inset -2px -2px #808080, inset 2px 2px #dfdfdf !important;
+}
+.excali-host .excalidraw .ToolIcon_type_checkbox:checked + .ToolIcon__icon,
+.excali-host .excalidraw .ToolIcon__icon:active {
+  box-shadow: inset -1px -1px #fff, inset 1px 1px #0a0a0a, inset -2px -2px #dfdfdf, inset 2px 2px #808080 !important;
+}
+.excali-host .excalidraw .dropdown-menu-item:hover { background: #000080 !important; color: #fff !important; }
+.excali-host .excalidraw .zoom-actions, .excali-host .excalidraw .undo-redo-buttons { gap: 2px; }

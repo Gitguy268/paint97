@@ -114,6 +114,29 @@ function securityHeaders(): Plugin {
   }
 }
 
+/**
+ * Excalidraw falls back to https://esm.sh for fonts when the local copy is not found, and
+ * registers that URL in every @font-face — which a font-src 'self' CSP reports as 99+ violations.
+ * Fonts are self-hosted (public/fonts), so point the fallback at our own origin instead.
+ */
+const ESM_SH_FALLBACK = '`https://esm.sh/'
+export function patchExcalidrawFallback(code: string): string {
+  const start = code.indexOf(ESM_SH_FALLBACK)
+  if (start < 0) return code
+  const tail = '/dist/prod/`'
+  const end = code.indexOf(tail, start)
+  return end < 0 ? code : code.slice(0, start) + '`${globalThis.location.origin}/`' + code.slice(end + tail.length)
+}
+function selfHostExcalidrawFonts(): Plugin {
+  return {
+    name: 'paint97:self-host-excalidraw-fonts',
+    enforce: 'pre',
+    transform(code, id) {
+      return /@excalidraw\/excalidraw\/dist\/.*\.js/.test(id) && code.includes('esm.sh') ? { code: patchExcalidrawFallback(code), map: null } : null
+    },
+  }
+}
+
 /** Build-time CSP <meta> so static deployments get a policy without a server. */
 function cspMeta(): Plugin {
   return {
@@ -137,7 +160,7 @@ export default defineConfig(() => {
   return {
     // NOTE: vercel.json duplicates the production policy as HTTP headers —
     // `npm run check:csp` (CI) fails if the two ever drift apart.
-    plugins: [react(), securityHeaders(), cspMeta()],
+    plugins: [react(), selfHostExcalidrawFonts(), securityHeaders(), cspMeta()],
     server: {
       port: 7891,
       host: 'localhost',
@@ -148,6 +171,12 @@ export default defineConfig(() => {
       host: 'localhost',
     },
     // 98.css ships `@media (not(hover))`, which lightningcss rejects — esbuild tolerates it
+    optimizeDeps: {
+      // Dev pre-bundles dependencies, bypassing the plugin above: patch inside the optimizer too.
+      rolldownOptions: {
+        plugins: [{ name: 'paint97:excalidraw-fallback', transform: (code: string, id: string) => (id.includes('@excalidraw/excalidraw/dist') && code.includes('esm.sh') ? { code: patchExcalidrawFallback(code) } : null) }],
+      },
+    },
     build: {
       cssMinify: 'esbuild' as const,
     },

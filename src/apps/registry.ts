@@ -17,6 +17,7 @@ export type AppDef = {
 };
 
 export const APPS: readonly AppDef[] = [
+  { id: "paint", title: "app.paint", icon: "🎨", component: lazy(() => import("./paint/Paint.tsx")), size: { w: 900, h: 600 }, singleton: true, desktop: true, start: true },
   { id: "settings", title: "app.settings", icon: "🛠️", component: lazy(() => import("./settings/Settings.tsx")), size: { w: 460, h: 520 }, singleton: true, desktop: false, start: true },
   { id: "help", title: "app.help", icon: "❓", component: lazy(() => import("./help/Help.tsx")), size: { w: 420, h: 300 }, singleton: true, desktop: true, start: true },
 ];
