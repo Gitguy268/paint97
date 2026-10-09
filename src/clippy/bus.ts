@@ -5,6 +5,7 @@ export type ClippyEvent =
   | { kind: "export" }
   | { kind: "error"; message: string }
   | { kind: "empty" } // canvas just became empty
+  | { kind: "idle" } // the user has been away for a while
   | { kind: "help" };
 
 type Listener = (e: ClippyEvent) => void;

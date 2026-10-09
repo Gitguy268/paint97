@@ -190,4 +190,6 @@ export const nl: Record<MsgKey, string> = {
   "mines.cell": "Rij {row} kolom {col}, {state}",
   "mines.won": "Gewonnen!",
   "mines.lost": "Je raakte een mijn. Spel voorbij.",
+  "clippy.label": "Clippy, je assistent. Druk op Enter voor een tip; pijltjestoetsen verplaatsen hem.",
+  "clippy.tipOfDay": "Tip van de dag: {tip}",
 };

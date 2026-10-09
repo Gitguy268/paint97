@@ -189,6 +189,8 @@ export const en = {
   "mines.cell": "Row {row} column {col}, {state}",
   "mines.won": "You won!",
   "mines.lost": "You hit a mine. Game over.",
+  "clippy.label": "Clippy, your assistant. Press Enter for a tip; arrow keys move him.",
+  "clippy.tipOfDay": "Tip of the day: {tip}",
 } as const;
 
 export type MsgKey = keyof typeof en;

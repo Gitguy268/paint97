@@ -1,0 +1,10 @@
+/* Clippy: every state change snaps. No transitions, no animations, no opacity fades:
+   add one and the Win98 choppiness is gone (tests/unit/clippyEngine.test.ts guards this file). */
+.clippy { position: fixed; z-index: 2000; margin: 0; padding: 0; min-width: 0; min-height: 0; border: 0; background: none; box-shadow: none; cursor: pointer; user-select: none; touch-action: none; transition: none !important; animation: none !important; }
+.clippy:active, .clippy:focus { box-shadow: none; padding: 0; }
+.clippy:focus-visible { outline: 1px dotted #fff; outline-offset: 2px; }
+.clippy-sprite { display: block; background-repeat: no-repeat; image-rendering: pixelated; transition: none !important; animation: none !important; }
+.clippy-balloon { position: fixed; z-index: 2001; display: none; max-width: 240px; padding: 8px 8px 6px; background: #ffffe1; color: #000; border: 1px solid #000; box-shadow: 2px 2px 0 rgba(0, 0, 0, .4); font-size: 11px; line-height: 1.45; overflow-wrap: break-word; cursor: pointer; transition: none !important; animation: none !important; }
+.clippy-balloon.show { display: block; }
+.clippy-balloon::after { content: ""; position: absolute; left: 50%; bottom: -9px; margin-left: -5px; border-left: 5px solid transparent; border-right: 5px solid transparent; border-top: 8px solid #000; }
+.clippy-balloon.below::after { bottom: auto; top: -9px; border-top: 0; border-bottom: 8px solid #000; }

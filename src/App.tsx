@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import { prefersReducedMotion, settings } from "./lib/settings.ts";
 import { useStore } from "./lib/store.ts";
 import BootScreen from "./shell/BootScreen.tsx";
@@ -6,8 +6,11 @@ import { SHARE_PREFIX } from "./lib/share.ts";
 import { actions } from "./shell/wmStore.ts";
 import { Shell } from "./shell/Shell.tsx";
 
+const Clippy = lazy(() => import("./clippy/Clippy.tsx"));
+
 export default function App() {
   const glass = useStore(settings, (s) => s.glass);
+  const clippyOn = useStore(settings, (s) => s.clippyOn);
   const [booting, setBooting] = useState(!prefersReducedMotion());
   useEffect(() => { if (location.hash.startsWith(SHARE_PREFIX)) actions.open("paint"); }, []);
   useEffect(() => { document.documentElement.classList.toggle("glass-on", glass); }, [glass]);
@@ -19,5 +22,5 @@ export default function App() {
     window.addEventListener("pointerdown", done, { once: true });
     return () => { clearTimeout(id); window.removeEventListener("keydown", done); window.removeEventListener("pointerdown", done); };
   }, [booting]);
-  return booting ? <BootScreen /> : <Shell />;
+  return booting ? <BootScreen /> : <Shell>{clippyOn && <Suspense fallback={null}><Clippy /></Suspense>}</Shell>;
 }
