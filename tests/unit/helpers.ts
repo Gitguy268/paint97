@@ -28,6 +28,9 @@ export class MemoryStorage {
     if (this.fail) throw new Error("storage blocked");
     this.#store.clear();
   }
+
+  get length(): number { return this.#store.size; }
+  key(i: number): string | null { return [...this.#store.keys()][i] ?? null; }
 }
 
 /** Replace the global with a fresh stub; call in beforeEach. */

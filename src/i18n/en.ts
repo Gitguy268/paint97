@@ -58,7 +58,6 @@ export const en = {
   "set.import": "Import backup…",
   "set.reset": "Reset all data…",
   "set.resetConfirm": "This permanently deletes every drawing, note and setting in this browser. Continue?",
-  "set.importOk": "Backup restored.",
   "set.importBad": "That file is not a valid Paint97 backup.",
   "tip.personality.classic": "Classic office helper",
   "tip.personality.concise": "No-nonsense",
@@ -218,6 +217,15 @@ export const en = {
   "chat.drawTitle": "Clippy wants to draw",
   "chat.drawAsk": "Let Clippy add this to your canvas?",
   "chat.apply": "Apply",
+  "set.exportOk": "Backup saved to your downloads.",
+  "set.dataHint": "One JSON file with your drawings, folders, versions, notes and settings. The Ask Clippy model is not included.",
+  "set.importConfirm": "Replace everything in this browser with the backup from {date}? Current drawings, notes and settings will be overwritten.",
+  "wp.auto": "Default",
+  "wp.teal": "Teal",
+  "wp.midnight": "Midnight",
+  "wp.clouds": "Clouds",
+  "wp.sunset": "Sunset",
+  "wp.grid": "Grid",
 } as const;
 
 export type MsgKey = keyof typeof en;

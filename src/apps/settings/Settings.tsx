@@ -15,7 +15,7 @@ export default function Settings() {
         <div className="field-row">
           <label htmlFor="set-wp">{t("set.wallpaper")}</label>
           <select id="set-wp" value={s.wallpaper} onChange={(e) => updateSettings({ wallpaper: e.target.value as typeof s.wallpaper })}>
-            {WALLPAPERS.map((w) => <option key={w.id} value={w.id}>{w.label}</option>)}
+            {WALLPAPERS.map((w) => <option key={w.id} value={w.id}>{t(`wp.${w.id}`)}</option>)}
           </select>
         </div>
         <div className="field-row">
