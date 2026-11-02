@@ -21,7 +21,9 @@ jobs:
         with:
           node-version: 24
       - run: npm ci || npm install
-      - run: npm run build -- --base=/paint97/
+      - run: npm run build
+        env:
+          VITE_BASE: /paint97/
       - run: cp dist/index.html dist/404.html
       - uses: actions/upload-pages-artifact@v3
         with:

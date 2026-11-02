@@ -179,6 +179,7 @@ function cspMeta(): Plugin {
 export default defineConfig(() => {
   // Full env (empty prefix): .env files + process.env, for build-time values.
   return {
+    base: process.env.VITE_BASE ?? '/',
     // NOTE: vercel.json duplicates the production policy as HTTP headers —
     // `npm run check:csp` (CI) fails if the two ever drift apart.
     plugins: [react(), selfHostExcalidrawFonts(), securityHeaders(), cspMeta()],
