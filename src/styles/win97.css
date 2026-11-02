@@ -42,7 +42,6 @@ input, textarea, select { user-select: text; }
 .taskbar { height: var(--tb); display: flex; align-items: stretch; gap: 4px; padding: 2px 3px; background: var(--face); border-top: 1px solid var(--hi); box-shadow: inset 0 1px 0 #dfdfdf; position: relative; z-index: 1000; }
 .start-btn { display: flex; align-items: center; gap: 4px; min-width: 0; padding: 0 8px; }
 .start-btn.pressed { box-shadow: inset -1px -1px #fff, inset 1px 1px #0a0a0a, inset -2px -2px #dfdfdf, inset 2px 2px #808080; }
-.logo { width: 16px; height: 16px; border: 1px solid #000; background: linear-gradient(135deg, #f00 0 25%, #0f0 25% 50%, #00f 50% 75%, #ff0 75%); }
 .task-items { flex: 1; display: flex; gap: 3px; overflow: hidden; min-width: 0; }
 .task-item { flex: 0 1 160px; min-width: 40px; display: flex; align-items: center; gap: 4px; padding: 0 6px; text-align: left; justify-content: flex-start; }
 .task-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -64,7 +63,7 @@ input, textarea, select { user-select: text; }
 .menubar-item > button:hover, .menubar-item > button.open, .menubar-item > button:focus-visible { background: var(--navy); color: #fff; outline: 0; }
 .menu-drop { position: absolute; top: 100%; left: 0; z-index: 50; }
 .start-menu { position: absolute; left: 2px; bottom: var(--tb); z-index: 999; display: flex; background: var(--face); box-shadow: inset -1px -1px #0a0a0a, inset 1px 1px #fff, inset -2px -2px #808080, inset 2px 2px #dfdfdf; padding: 3px; }
-.start-banner { width: 24px; background: linear-gradient(0deg, var(--navy), var(--navy2)); color: #fff; position: relative; margin-right: 2px; }
+.start-banner { width: 24px; color: #fff; position: relative; margin-right: 2px; }
 .start-banner span { position: absolute; bottom: 6px; left: 3px; writing-mode: vertical-rl; transform: rotate(180deg); font-size: 16px; }
 .start-menu .menu-list { box-shadow: none; padding: 0; min-width: 200px; }
 .start-menu .menu-list button { padding: 7px 10px 7px 6px; }
@@ -117,7 +116,7 @@ input, textarea, select { user-select: text; }
 .desktop-icons { bottom: 8px; flex-wrap: wrap; align-content: flex-start; column-gap: 10px; }
 
 /* folder windows */
-.exp, .notepad { flex: 1; min-height: 0; display: flex; flex-direction: column; background: var(--face); }
+.exp, .notepad, .vpc { flex: 1; min-height: 0; display: flex; flex-direction: column; background: var(--face); }
 .exp-toolbar { display: flex; flex-wrap: wrap; gap: 4px; padding: 4px; }
 .exp-toolbar button { min-width: 0; padding: 0 8px; }
 .exp-address { margin: 0 3px 3px; padding: 3px 5px; background: #fff; box-shadow: inset 1px 1px #808080, inset -1px -1px #fff; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -166,6 +165,12 @@ input, textarea, select { user-select: text; }
 .clock-digital .clock-time { font: bold 34px "Courier New", monospace; }
 .win:focus { outline: 0; }
 
+/* PC Emulator: v86 fills the first child with text rows */
+.jspaint { flex: 1; min-height: 0; width: 100%; border: 0; }
+.vpc-screen { flex: 1; min-height: 0; overflow: auto; padding: 4px; background: #000; color: #aaa; }
+.vpc-screen > div { white-space: pre; font: 14px/14px "Courier New", Courier, monospace; }
+.vpc-screen:focus-visible { outline: 1px dotted #fff; outline-offset: -2px; }
+
 /* Ask Clippy */
 .chat { flex: 1; min-height: 0; display: flex; flex-direction: column; background: var(--face); }
 .chat-setup { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; padding: 16px; text-align: center; }
@@ -184,5 +189,13 @@ input, textarea, select { user-select: text; }
 .chat-msg.assistant { align-self: flex-start; background: #ffffe1; }
 .chat-composer { display: flex; gap: 6px; padding: 5px; }
 .chat-composer input { flex: 1; min-width: 0; }
+.chat-options { display: flex; align-items: center; gap: 4px; padding: 0 6px 4px; }
 .chat-model { display: flex; align-items: center; gap: 10px; padding: 3px 6px; border-top: 1px solid var(--shadow); }
 .chat-model button { margin-left: auto; min-width: 0; padding: 0 8px; }
+
+/* Send to a device: the pairing code on white (a scanner needs a light quiet zone), the camera, the paste box. */
+.nearby { display: grid; gap: 8px; max-width: 420px; }
+.nearby p { margin: 0; }
+.nearby-qr { display: block; width: min(240px, 60vw); height: auto; margin: 0 auto; border: 1px solid #808080; }
+.nearby-camera { display: block; width: 100%; max-height: 40vh; background: #000; object-fit: cover; }
+.nearby-error { color: #a00000; }

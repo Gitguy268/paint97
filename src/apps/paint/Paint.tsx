@@ -4,7 +4,8 @@ import { useT, type MsgKey } from "../../i18n/index.ts";
 import { focusedId } from "../../lib/wm.ts";
 import { actions, wm } from "../../shell/wmStore.ts";
 import { decodeScene, encodeScene, SHARE_PREFIX } from "../../lib/share.ts";
-import { sceneToFile, readSceneFile, slugFilename } from "../../lib/storage.ts";
+import { buildScenePayload, parseSceneJson, sceneToFile, readSceneFile, slugFilename } from "../../lib/storage.ts";
+import { RTC_PREFIX, type Payload } from "../../lib/nearby.ts";
 import { STICKERS } from "../../lib/stickers.ts";
 import { click, errorBeep, pop, saveChord } from "../../lib/sound.ts";
 import { clearScene, type Scene } from "../../lib/storage.ts";
@@ -12,11 +13,12 @@ import { isLive, sanitizeName } from "../../lib/fs.ts";
 import { fsOps, fsState } from "../../lib/fsStore.ts";
 import { useStore } from "../../lib/store.ts";
 import { VersionList } from "../files/VersionList.tsx";
-import { boundFile, canvasCmd, openReq, paintApi } from "./session.ts";
+import { boundFile, canvasCmd, canvasDiagram, openReq, paintApi } from "./session.ts";
 import type { AppProps } from "../registry.ts";
 import { Dialog } from "../../ui/Dialog.tsx";
 import { MenuBar } from "../../ui/Menu.tsx";
-import { applyCanvasCommand, applyScene, copyPng, exportFramed, exportPng, exportSvg, insertSticker, sendHistoryKey, type AppState, type ExcalidrawElement, type PaintApi } from "./api.ts";
+import { appendMermaid, applyCanvasCommand, applyScene, copyPng, exportFramed, exportPng, exportSvg, insertSticker, sendHistoryKey, type AppState, type ExcalidrawElement, type PaintApi } from "./api.ts";
+import { NearbyDialog } from "./NearbyDialog.tsx";
 import { Palette } from "./Palette.tsx";
 import { ToolStrip, type ToolId } from "./ToolStrip.tsx";
 
@@ -39,6 +41,7 @@ export default function Paint({ winId }: AppProps) {
   const [versions, setVersions] = useState(false);
   const [note, setNote] = useState("");
   const [confirm, setConfirm] = useState<null | { text: string; run: () => void }>(null);
+  const [nearby, setNearby] = useState<null | { send?: Payload; offer?: string }>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const prevEls = useRef(0);
 
@@ -63,7 +66,14 @@ export default function Paint({ winId }: AppProps) {
   }, [view.tool]);
 
   // #scene= share links: decode, apply, then clear the hash so reloads use the local autosave.
+  // #rtc= is another device's Send to a device code: the Receive dialog takes it.
   const importShared = useCallback(async (a: PaintApi) => {
+    if (location.hash.startsWith(RTC_PREFIX)) {
+      const offer = location.hash.slice(1);
+      history.replaceState(null, "", location.pathname + location.search);
+      setNearby({ offer });
+      return;
+    }
     if (!location.hash.startsWith(SHARE_PREFIX)) return;
     const scene = await decodeScene(location.hash);
     history.replaceState(null, "", location.pathname + location.search);
@@ -91,6 +101,12 @@ export default function Paint({ winId }: AppProps) {
     canvasCmd.set(null);
     void applyCanvasCommand(api, cmd).catch(() => notify(t("paint.exportFail")));
   }, [api, cmd, notify, t]);
+  const diagram = useStore(canvasDiagram, (x) => x);
+  useEffect(() => {
+    if (!api || !diagram) return;
+    canvasDiagram.set(null);
+    void appendMermaid(api, diagram).catch(() => notify(t("chat.diagramBad")));
+  }, [api, diagram, notify, t]);
 
   const currentScene = (a: PaintApi): Scene => ({ elements: a.getSceneElements() as unknown as object[], appState: a.getAppState() });
   const saved = (as: string) => { saveChord(); notify(t("paint.saved", { name: as })); emitClippy({ kind: "save" }); };
@@ -130,6 +146,24 @@ export default function Paint({ winId }: AppProps) {
     try { await navigator.clipboard.writeText(url); notify(t("paint.linkCopied")); } catch { notify(`${t("paint.clipFail")} ${url}`); }
   };
 
+  const nearbyDone = (result: "sent" | "declined" | Payload) => {
+    setNearby(null);
+    if (result === "sent") { notify(t("nearby.sent")); return; }
+    // The sender hears "declined"; the receiver who declined needs no message.
+    if (result === "declined") { if (nearby?.send) notify(t("nearby.declined")); return; }
+    if (!api) return;
+    const received = sanitizeName(result.title) || "untitled";
+    // The same validation as a file or a share link: the bytes came from another device.
+    void (async () => {
+      try {
+        await applyScene(api, parseSceneJson(JSON.parse(result.text)));
+        boundFile.set(null);
+        setName(received);
+        notify(t("nearby.received", { name: received }));
+      } catch { errorBeep(); notify(t("nearby.bad")); }
+    })();
+  };
+
   const setStyle = (patch: Partial<AppState>) => api?.updateScene({ appState: patch as AppState });
   const zoomTo = (v: number) => api?.updateScene({ appState: { zoom: { value: Math.min(30, Math.max(0.1, v)) as AppState["zoom"]["value"] } } as AppState });
 
@@ -161,6 +195,8 @@ export default function Paint({ winId }: AppProps) {
       { label: t("paint.exportFramed"), onSelect: guarded((a) => exportFramed(a, name, t("paint.objects", { n: view.els }), [t("paint.file"), t("paint.edit"), t("paint.stickers"), t("paint.view")]), () => emitClippy({ kind: "export" })) },
       { label: t("paint.copyImage"), onSelect: guarded((a) => copyPng(a), () => notify(t("paint.copied"))) },
       { label: t("paint.copyLink"), onSelect: () => void copyLink() },
+      { label: t("paint.send"), onSelect: () => { if (api) setNearby({ send: { title: name, text: JSON.stringify(buildScenePayload(api.getSceneElements(), api.getAppState())) } }); } },
+      { label: t("paint.receive"), onSelect: () => setNearby({}) },
     ] },
     { label: t("paint.edit"), items: [
       { label: t("paint.undo"), shortcut: "Ctrl+Z", onSelect: () => sendHistoryKey(false) },
@@ -211,6 +247,7 @@ export default function Paint({ winId }: AppProps) {
           <VersionList node={node} onDone={() => setVersions(false)} onError={() => notify(t("files.damaged", { name: node.name }))} />
         </Dialog>
       )}
+      {nearby && <NearbyDialog {...nearby} onClose={() => setNearby(null)} onDone={nearbyDone} />}
       {confirm && (
         <Dialog
           title={t("app.paint")}

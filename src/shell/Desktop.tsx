@@ -1,3 +1,4 @@
+import { AppIcon } from "../ui/AppIcon.tsx";
 import { useRef, useState } from "react";
 import { APPS } from "../apps/registry.ts";
 import { useT } from "../i18n/index.ts";
@@ -28,7 +29,7 @@ export function DesktopIcons() {
           onClick={() => setSel(a.id)}
           onDoubleClick={() => actions.open(a.id)}
         >
-          <span className="glyph" aria-hidden="true">{a.icon}</span>
+          <span className="glyph" aria-hidden="true"><AppIcon src={a.icon} size={32} /></span>
           <span className="label">{t(a.title)}</span>
         </button>
       ))}

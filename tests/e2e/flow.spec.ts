@@ -230,7 +230,7 @@ test("offline: the shell, Paint and the saved drawing survive a reload with no n
 
   // Shell only: the worker never holds the model.
   const cached = await page.evaluate(async () => (await Promise.all((await caches.keys()).filter((k) => k.startsWith("paint97-shell-")).map(async (k) => (await (await caches.open(k)).keys()).map((r) => r.url)))).flat());
-  expect(cached.some((u) => u.includes("/models/"))).toBe(false);
+  expect(cached.some((u) => /huggingface|hf\.co/.test(u))).toBe(false);
   await context.setOffline(false);
 });
 
@@ -261,7 +261,7 @@ test("settings: language, wallpaper and a full backup → reset → restore cycl
   await page.getByRole("menuitem", { name: "Control Panel" }).click();
   await page.getByLabel("Import backup…", { exact: true }).last().setInputFiles(file);
   await dialog(page).getByRole("button", { name: "OK" }).click();
-  await page.waitForFunction(() => localStorage.getItem("paint97.notepad.v1") === "remember the milk");
   await page.locator(".desktop").waitFor();
+  await expect(page.getByLabel("Notepad text")).toHaveValue("remember the milk");
   expect(await page.evaluate(() => JSON.parse(localStorage.getItem("paint97.settings.v1")!).wallpaper)).toBe("midnight");
 });

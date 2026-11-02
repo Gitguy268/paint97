@@ -2,6 +2,7 @@
 import { useRef, useState } from "react";
 import { useT } from "../../i18n/index.ts";
 import { exportBackup, importBackup, MAX_BACKUP_BYTES, parseBackup, resetAll, type Backup } from "../../lib/backup.ts";
+import { sharedNoteStore } from "../../lib/noteStore.ts";
 import { sharedStore } from "../../lib/idb.ts";
 import { errorBeep } from "../../lib/sound.ts";
 import { download } from "../../lib/storage.ts";
@@ -16,7 +17,7 @@ export function DataSection() {
 
   const doExport = async () => {
     try {
-      const b = await exportBackup(localStorage, await sharedStore());
+      const b = await exportBackup(localStorage, await sharedStore(), new Date(), await sharedNoteStore());
       download(`paint97-backup-${b.exportedAt.slice(0, 10)}.json`, JSON.stringify(b));
       setNote(t("set.exportOk"));
     } catch { fail(t("files.unavailable")); }
@@ -34,8 +35,8 @@ export function DataSection() {
     setPending(null);
     try {
       const kv = await sharedStore();
-      if (job === "reset") await resetAll(localStorage, kv);
-      else if (job) await importBackup(job, localStorage, kv);
+      if (job === "reset") await resetAll(localStorage, kv, await sharedNoteStore());
+      else if (job) await importBackup(job, localStorage, kv, await sharedNoteStore());
       location.reload();
     } catch { fail(t("files.unavailable")); }
   };

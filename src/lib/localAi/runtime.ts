@@ -1,187 +1,176 @@
-// Browser-side runtime for Ask Clippy: capability probes, model install
-// orchestration, and the wllama (llama.cpp → WASM) lifecycle.
+// Browser-side runtime for Ask Clippy: wllama (llama.cpp in WebAssembly) running
+// MiniCPM-V 4.7 1B, which also reads images. wllama puts every layer on the GPU through
+// WebGPU when the browser has it and runs on the CPU otherwise.
 //
-// Everything that touches the network or Cache Storage goes through the
-// dependency-injected helpers in model.ts; this file is the browser binding.
-import wasmUrl from "@wllama/wllama/src/wasm/wllama.wasm?url";
-// Deep path on purpose: the package's bare entry resolves to its raw
-// TypeScript sources (root index.ts), which would pull non-erasable syntax
-// (enums) into this project's type-check. esm/index.js is the published
-// flat bundle; its sibling index.d.ts carries the types.
-import type { ChatCompletionMessage, ChatCompletionChunk } from "@wllama/wllama/esm/index.js";
+// The two GGUF files (the language model and its image projector) come from Hugging Face
+// at a pinned revision, in 64 MiB ranges: each range is checked against the SHA-256 in
+// minicpm-v.json before it is cached, so a pause keeps every range that finished and a
+// tampered one never reaches the cache. The engine is vendored under public/vendor/wllama/
+// (a master build: the 3.8.1 release cannot load this model) and only ever imported on
+// demand, so it stays out of the desktop shell.
+import raw from "./minicpm-v.json?raw";
 import { GENERATION } from "./chat";
-import {
-  MODEL_MANIFEST,
-  openModelCache,
-  pruneModelCaches,
-} from "./manifest";
-import { installModel, isModelInstalled, deleteModel, readModelBlob, type DownloadProgress } from "./model";
+import { planRanges, sha256Hex, type ModelManifest } from "./modelFiles";
+import type { DownloadProgress } from "./modelState";
 
-// --- capability probes ------------------------------------------------------
-// Byte sequences and the mem64 constructor probe mirror wasm-feature-detect
-// (Apache-2.0) as used by @wllama/wllama — the runtime needs exception
-// handling, SIMD and 64-bit memory; older browsers get a clear message
-// instead of a failed 253 MB download.
+export const MODEL_NAME = "MiniCPM-V 4.7 1B";
+const MANIFEST = JSON.parse(raw) as ModelManifest;
+const RANGES = planRanges(MANIFEST);
+const MODEL_BYTES = RANGES.reduce((n, r) => n + r.size, 0);
+// Named after the revision: a new model ships under a new name, and the old bucket is dropped.
+const CACHE = `paint97-minicpm-v-${MANIFEST.revision.slice(0, 8)}`;
+const VENDOR = `${import.meta.env.BASE_URL}vendor/wllama/`;
 
-const EXCEPTIONS_WASM = new Uint8Array([
-  0, 97, 115, 109, 1, 0, 0, 0, 1, 4, 1, 96, 0, 0, 3, 2, 1, 0, 10, 8, 1, 6, 0,
-  6, 64, 25, 11, 11,
-]);
-
-const SIMD_WASM = new Uint8Array([
-  0, 97, 115, 109, 1, 0, 0, 0, 1, 5, 1, 96, 0, 1, 123, 3, 2, 1, 0, 10, 10, 1,
-  8, 0, 65, 0, 253, 15, 253, 98, 11,
-]);
-
-const hasMem64 = (): boolean => {
-  try {
-    const memory = new WebAssembly.Memory({
-      address: "i64",
-      initial: 1n,
-    } as unknown as WebAssembly.MemoryDescriptor);
-    return !!memory;
-  } catch {
-    return false;
-  }
-};
-
-const hasGpu = (): boolean => {
-  if (typeof navigator === "undefined") return false;
-  const gpu = (navigator as { gpu?: unknown }).gpu;
-  return gpu !== undefined && gpu !== null;
-};
-
-/** True when the browser can run the bundled wasm build at all. */
-export function browserSupport(): string | null {
-  if (!WebAssembly.validate(EXCEPTIONS_WASM)) return "WebAssembly exception handling";
-  if (!WebAssembly.validate(SIMD_WASM)) return "WebAssembly SIMD";
-  if (!hasMem64()) return "WebAssembly 64-bit memory";
-  return null;
-}
-
-// JSPI is optional (the runtime falls back to synchronous file writes) but
-// without it wllama's WebGPU path is unreliable, so it gates the GPU attempt.
-const hasJspi = (): boolean => !!(WebAssembly as { Suspending?: unknown }).Suspending;
-
-// --- install ----------------------------------------------------------------
-
-// Local first, like Clippy's sprites: a deployment that ships models/ next to the app
-// (and the dev/preview servers) never touches GitHub. Either source is hash-verified by installModel.
-const localFirstFetch = async (url: string, init?: { signal?: AbortSignal }): Promise<Response> => {
-  try {
-    const local = await fetch(`${import.meta.env.BASE_URL}models/${url.slice(url.lastIndexOf("/") + 1)}`, init);
-    // A static host's SPA fallback answers 200 text/html for missing files: that is not a model part.
-    if (local.ok && !(local.headers.get("content-type") ?? "").includes("text/html")) return local;
-  } catch (e) {
-    if (init?.signal?.aborted) throw e;
-  }
-  return fetch(url, init);
-};
-
-export const installModelToCache = (
-  onProgress: (p: DownloadProgress) => void,
-  signal?: AbortSignal,
-): Promise<void> =>
-  openModelCache().then((cache) => {
-    // A new model revision may have shipped since this profile last cached
-    // one; drop the old bucket before filling the new one.
-    void pruneModelCaches();
-    return installModel({ cache, manifest: MODEL_MANIFEST, onProgress, signal, fetchImpl: localFirstFetch });
-  });
-
-export async function isModelCached(): Promise<boolean> {
-  return isModelInstalled(await openModelCache(), MODEL_MANIFEST);
-}
-
-/** Drops the cached parts (frees ~253 MB of Cache Storage). */
-export function deleteModelFromCache(): Promise<void> {
-  return openModelCache().then((cache) => deleteModel({ cache, manifest: MODEL_MANIFEST }));
-}
-
-export function modelSizeLabel(): string {
-  return `${Math.round(MODEL_MANIFEST.totalBytes / 1e6)} MB`;
-}
-
-export const MODEL_PARTS = MODEL_MANIFEST.parts.length;
-
-// --- runtime ----------------------------------------------------------------
-
-// Test seam for the e2e suite: the audit injects a scripted engine factory
-// here (page.evaluate) so CI can drive Ask Clippy's reply path without ever
-// running real inference or downloading the 253 MB model. The app itself
-// never sets it — production only ever reads it as undefined.
-declare global {
-  var __p97EngineFactory: (() => Engine) | undefined;
-}
+type Part = { type: "text"; text: string } | { type: "image"; data: ArrayBuffer };
+export type EngineMessage = { role: "system" | "user" | "assistant"; content: string | Part[] };
+export type GenerationOptions = { temperature: number; max_tokens: number };
 
 export type Engine = {
-  /** Streams one assistant reply; deltas arrive via onDelta. */
+  /** Streams one assistant reply; deltas arrive via onDelta. Rejects with an AbortError when stopped. */
   chat: (
-    messages: ChatCompletionMessage[],
+    messages: EngineMessage[],
     onDelta: (text: string) => void,
     signal?: AbortSignal,
+    options?: GenerationOptions,
   ) => Promise<void>;
-  /** Best-effort teardown: frees the wasm instance. Absent on test doubles. */
+  /** Best-effort teardown: frees the GPU and wasm memory. Absent on test doubles. */
   close?: () => Promise<void>;
 };
 
-/** Loads the cached model into a fresh single-threaded worker instance. */
-export async function createEngine(): Promise<Engine> {
-  const scripted = globalThis.__p97EngineFactory;
-  if (scripted) return scripted();
-  const blob = await readModelBlob(await openModelCache(), MODEL_MANIFEST);
-  // Deep path — see the note on the type import above.
-  const { Wllama } = await import("@wllama/wllama/esm/index.js");
+// Only the slice of the vendored bundle this file calls.
+type Wllama = {
+  setCompat(paths: { worker: string; wasm: string }): void;
+  loadModel(blobs: Blob[], params: Record<string, unknown>): Promise<void>;
+  createChatCompletion(params: Record<string, unknown>): Promise<AsyncIterable<{ choices: { delta: { content?: string } }[] }>>;
+  exit(): Promise<void>;
+};
+type WllamaModule = { Wllama: new (paths: { default: string }, config: { suppressNativeLog: boolean }) => Wllama };
 
-  const boot = async (gpu: boolean): Promise<InstanceType<typeof Wllama>> => {
-    const w = new Wllama({ default: wasmUrl }, { suppressNativeLog: true });
-    // Never fetch runtime bits from a CDN: compat mode would pull its worker
-    // and wasm from jsdelivr, which our CSP deliberately refuses.
-    w.setCompat(null);
-    try {
-      await w.loadModel([blob], {
-        n_ctx: 2048,
-        // Single-threaded on purpose: without COOP/COEP headers there is no
-        // cross-origin isolation, so pthreads are unavailable anyway. Keeps
-        // the site free of headers that would break the CDN fallback.
-        n_threads: 1,
-        ...(gpu ? {} : { n_gpu_layers: 0 }),
-      });
-      return w;
-    } catch (e) {
-      await w.exit().catch(() => undefined);
-      throw e;
+// Test seam for the e2e suite: a scripted engine factory injected with
+// page.addInitScript, so CI (no GPU, no 1.6 GB download) can drive the model
+// manager and the reply path. The app itself never sets it.
+declare global {
+  var __p97EngineFactory: ((onProgress?: (p: DownloadProgress) => void, signal?: AbortSignal) => Engine | Promise<Engine>) | undefined;
+}
+
+export const isAbortError = (e: unknown): boolean => e instanceof Error && e.name === "AbortError";
+
+/** Null when this browser can run the model, else the missing capability. wllama's compat build covers browsers without JSPI or 64-bit memory. */
+export function browserSupport(): Promise<string | null> {
+  return Promise.resolve(globalThis.__p97EngineFactory || typeof WebAssembly === "object" ? null : "WebAssembly");
+}
+
+export async function isModelCached(): Promise<boolean> {
+  if (globalThis.__p97EngineFactory) return true;
+  // Free what earlier runtimes kept: wllama's 253 MB Gemma buckets, WebLLM's 880 MB Qwen ones, older revisions.
+  for (const name of await caches.keys()) {
+    if (name !== CACHE && (name.startsWith("paint97-model-") || name.startsWith("paint97-minicpm-v-") || name.startsWith("webllm/"))) void caches.delete(name);
+  }
+  return (await (await caches.open(CACHE)).keys()).length === RANGES.length;
+}
+
+/** Drops the cached model (frees ~1.6 GB of Cache Storage). */
+export async function deleteModelFromCache(): Promise<void> {
+  await caches.delete(CACHE);
+}
+
+export const modelSizeLabel = (): string => `${Math.round(MODEL_BYTES / 1e6)} MB`;
+
+/** Fetches, checks and caches every range not cached yet. Aborting pauses; finished ranges stay. */
+async function download(cache: Cache, onProgress?: (p: DownloadProgress) => void, signal?: AbortSignal): Promise<void> {
+  let loaded = 0;
+  const report = (extra: number) => onProgress?.({ loadedBytes: loaded + extra, totalBytes: MODEL_BYTES });
+  for (const [i, r] of RANGES.entries()) {
+    const where = `part ${i + 1} of ${RANGES.length}`;
+    if (await cache.match(r.key)) {
+      loaded += r.size;
+      report(0);
+      continue;
     }
-  };
+    let res: Response;
+    try {
+      res = await fetch(r.url, { headers: { Range: `bytes=${r.start}-${r.start + r.size - 1}` }, signal });
+    } catch (e) {
+      if (isAbortError(e)) throw e;
+      throw new Error(`Could not reach Hugging Face for ${where}. Check your connection.`, { cause: e });
+    }
+    if (!res.ok || !res.body) throw new Error(`Downloading ${where} failed (HTTP ${res.status}).`);
+    // Streamed so the bar moves inside a 64 MiB range.
+    const reader = res.body.getReader();
+    const pieces: Uint8Array[] = [];
+    let got = 0;
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      pieces.push(value);
+      got += value.byteLength;
+      report(got);
+    }
+    if (got !== r.size) throw new Error(`The model's ${where} came back as ${got} bytes, expected ${r.size}.`);
+    const bytes = new Uint8Array(got);
+    let at = 0;
+    for (const p of pieces) { bytes.set(p, at); at += p.byteLength; }
+    if ((await sha256Hex(bytes)) !== r.sha256) throw new Error(`Integrity check failed for the model's ${where}: the bytes do not match the pinned hash.`);
+    await cache.put(r.key, new Response(bytes));
+    loaded += r.size;
+    report(0);
+  }
+}
 
-  // WebGPU first when the environment looks capable; fall back to CPU once
-  // rather than failing outright (adapter-less machines are common).
-  const wantGpu = hasJspi() && hasGpu();
-  let w: InstanceType<typeof Wllama>;
+/**
+ * Downloads whatever is not cached yet, then loads the model (onto the GPU when there is one).
+ * Aborting the signal pauses: finished ranges stay cached, so the next call resumes.
+ */
+export async function createEngine(onProgress?: (p: DownloadProgress) => void, signal?: AbortSignal): Promise<Engine> {
+  const scripted = globalThis.__p97EngineFactory;
+  if (scripted) return scripted(onProgress, signal);
+  signal?.throwIfAborted();
+  const cache = await caches.open(CACHE);
+  await download(cache, onProgress, signal);
+  // One Blob per file, built from the cached ranges: Cache Storage hands them back disk-backed.
+  const parts: Blob[][] = [];
+  for (const r of RANGES) {
+    const hit = await cache.match(r.key);
+    if (!hit) throw new Error("Part of the model is missing from this device. Download it again.");
+    (parts[r.file] ??= []).push(await hit.blob());
+  }
+  signal?.throwIfAborted();
+
+  const { Wllama } = (await import(/* @vite-ignore */ `${VENDOR}wllama.js`)) as WllamaModule;
+  const w = new Wllama({ default: `${VENDOR}wllama.wasm` }, { suppressNativeLog: true });
+  // Both builds are vendored: upstream points the compat pair at jsDelivr, which the CSP refuses.
+  w.setCompat({ worker: `${VENDOR}wllama-compat.js`, wasm: `${VENDOR}wllama-compat.wasm` });
+  const pause = () => void w.exit().catch(() => undefined);
+  signal?.addEventListener("abort", pause);
   try {
-    w = await boot(wantGpu);
+    // MiniCPM reasons out loud first unless its chat template is told not to.
+    await w.loadModel(parts.map((p) => new Blob(p)), { n_ctx: 4096, default_template_kwargs: { enable_thinking: false } });
+    signal?.throwIfAborted();
   } catch (e) {
-    if (!wantGpu) throw e;
-    w = await boot(false);
+    await w.exit().catch(() => undefined);
+    signal?.throwIfAborted();
+    // A private window keeps every Blob in memory and Chrome there gives up reading back a model this size.
+    if (e instanceof Error && /NotReadableError/.test(e.message)) throw new Error("This window could not hold the model. In a private window, try a normal one.", { cause: e });
+    throw e;
+  } finally {
+    signal?.removeEventListener("abort", pause);
   }
 
   return {
-    async chat(messages, onDelta, signal) {
-      await w.createChatCompletion({
-        messages,
-        stream: true,
-        temperature: GENERATION.temperature,
-        max_tokens: GENERATION.max_tokens,
-        abortSignal: signal,
-        onData: (chunk: ChatCompletionChunk) => {
-          const text = chunk.choices[0]?.delta?.content;
+    async chat(messages, onDelta, stop, options = GENERATION) {
+      try {
+        const stream = await w.createChatCompletion({ messages, stream: true, abortSignal: stop, ...options });
+        for await (const chunk of stream) {
+          const text = chunk.choices[0]?.delta.content;
           if (text) onDelta(text);
-        },
-      });
+        }
+      } catch (e) {
+        stop?.throwIfAborted();
+        throw e;
+      }
+      // A stopped reply must not count as finished: it could draw.
+      stop?.throwIfAborted();
     },
-    // Teardown is best-effort: the model manager calls this before
-    // deleting the cached parts so a re-download doesn't stack a second
-    // 253 MB wasm instance on top of the first.
     close: () => w.exit().catch(() => undefined),
   };
 }

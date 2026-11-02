@@ -1,5 +1,7 @@
 {
   "$schema": "./node_modules/oxlint/configuration_schema.json",
+  // Third-party bundles copied in as built (see public/vendor/wllama/README.md).
+  "ignorePatterns": ["public/vendor/**"],
   "plugins": ["react", "typescript", "oxc"],
   "categories": {
     "correctness": "error",

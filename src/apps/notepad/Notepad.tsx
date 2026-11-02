@@ -1,6 +1,7 @@
-// Notepad: debounced autosave to localStorage, word wrap, find/replace, .txt open/save.
-import { useEffect, useRef, useState } from "react";
-import { useT } from "../../i18n/index.ts";
+// Notepad: BrowserFS autosave with a legacy localStorage fallback, find/replace and .txt open/save.
+import { useCallback, useEffect, useRef, useState } from "react";
+import { NOTE_NAME_KEY, NOTE_TEXT_KEY, sharedNoteStore, type Note } from "../../lib/noteStore.ts";
+import { t as translateNow, useT } from "../../i18n/index.ts";
 import { click, errorBeep, saveChord } from "../../lib/sound.ts";
 import { download, slugFilename } from "../../lib/storage.ts";
 import { actions } from "../../shell/wmStore.ts";
@@ -8,8 +9,8 @@ import { Dialog } from "../../ui/Dialog.tsx";
 import { MenuBar } from "../../ui/Menu.tsx";
 import type { AppProps } from "../registry.ts";
 
-const K_TEXT = "paint97.notepad.v1";
-const K_NAME = "paint97.notepad.name.v1";
+const K_TEXT = NOTE_TEXT_KEY;
+const K_NAME = NOTE_NAME_KEY;
 const K_WRAP = "paint97.notepad.wrap.v1";
 const MAX_FILE = 5 * 1024 * 1024; // plain text; bigger would block the UI thread
 const ls = {
@@ -20,6 +21,7 @@ type Find = { needle: string; repl: string; replace: boolean };
 
 export default function Notepad({ winId }: AppProps) {
   const t = useT();
+  const [ready, setReady] = useState(false);
   const [text, setText] = useState(() => ls.get(K_TEXT) ?? t("note.welcome"));
   const [name, setNameState] = useState(() => ls.get(K_NAME) ?? "notes.txt");
   const [wrap, setWrap] = useState(() => ls.get(K_WRAP) !== "0");
@@ -29,28 +31,57 @@ export default function Notepad({ winId }: AppProps) {
   const fileRef = useRef<HTMLInputElement>(null);
   const area = useRef<HTMLTextAreaElement>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const pending = useRef<string | null>(null);
+  const pending = useRef<Note | null>(null);
+  const nameRef = useRef(name);
+  const persist = useCallback(async (n: Note) => {
+    let fallback = false;
+    try { localStorage.setItem(K_TEXT, n.text); localStorage.setItem(K_NAME, n.name); fallback = true; } catch { /* BrowserFS can still save beyond localStorage's quota. */ }
+    try {
+      const store = await sharedNoteStore();
+      if (!store) throw new Error("storage unavailable");
+      await store.save(n);
+      // A newer edit may already be waiting; remove only this save's fallback.
+      if (ls.get(K_TEXT) === n.text && ls.get(K_NAME) === n.name) {
+        localStorage.removeItem(K_TEXT); localStorage.removeItem(K_NAME);
+      }
+    } catch { if (!fallback) { errorBeep(); setNote(translateNow("note.saveBad")); } }
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      try {
+        const legacy = ls.get(K_TEXT);
+        const store = await sharedNoteStore();
+        const saved = legacy !== null ? { text: legacy, name: ls.get(K_NAME) ?? "notes.txt" } : await store?.load();
+        if (!cancelled && saved) { setText(saved.text); setNameState(saved.name); nameRef.current = saved.name; }
+        if (!cancelled && legacy !== null && saved) void persist(saved);
+      } catch { if (!cancelled) setNote(translateNow("files.unavailable")); }
+      finally { if (!cancelled) setReady(true); }
+    })();
+    return () => { cancelled = true; };
+  }, [persist]);
 
   useEffect(() => { actions.setTitle(winId, `${name} - ${t("app.notepad")}`); }, [winId, name, t]);
   useEffect(() => { if (!note) return; const id = setTimeout(() => setNote(""), 4000); return () => clearTimeout(id); }, [note]);
   // Closing the window must not drop the last half-second of typing.
   useEffect(() => () => {
     if (timer.current) clearTimeout(timer.current);
-    if (pending.current !== null) ls.set(K_TEXT, pending.current);
-  }, []);
+    if (pending.current !== null) void persist(pending.current);
+  }, [persist]);
 
-  const setName = (n: string) => { setNameState(n); ls.set(K_NAME, n); };
+  const setName = (n: string) => { setNameState(n); nameRef.current = n; };
   const onType = (v: string) => {
     setText(v);
-    pending.current = v;
+    pending.current = { text: v, name: nameRef.current };
     if (timer.current) clearTimeout(timer.current);
-    timer.current = setTimeout(() => { timer.current = null; ls.set(K_TEXT, v); pending.current = null; }, 500);
+    timer.current = setTimeout(() => { timer.current = null; if (pending.current) void persist(pending.current); pending.current = null; }, 500);
   };
   const replaceAllText = (v: string, n: string) => {
     // Cancel the pending autosave first, or it would land the old text over the new one.
     if (timer.current) { clearTimeout(timer.current); timer.current = null; }
     pending.current = null;
-    setText(v); ls.set(K_TEXT, v); setName(n);
+    setText(v); setName(n); void persist({ text: v, name: n });
   };
   const openFile = async (f: File | undefined) => {
     if (!f) return;
@@ -110,7 +141,7 @@ export default function Notepad({ winId }: AppProps) {
 
   return (
     <div className="notepad">
-      <MenuBar menus={menus} label={t("app.notepad")} />
+      <MenuBar menus={ready ? menus : []} label={t("app.notepad")} />
       {find && (
         <div className="note-find" role="search">
           <label htmlFor={`${winId}-find`}>{t("note.findWhat")}</label>
@@ -127,7 +158,7 @@ export default function Notepad({ winId }: AppProps) {
         </div>
       )}
       <textarea
-        ref={area} className="note-area" value={text} spellCheck={false} wrap={wrap ? "soft" : "off"} aria-label={t("note.text")}
+        ref={area} disabled={!ready} aria-busy={!ready} className="note-area" value={text} spellCheck={false} wrap={wrap ? "soft" : "off"} aria-label={t("note.text")}
         onChange={(e) => onType(e.target.value)}
         onKeyDown={(e) => {
           if (!(e.ctrlKey || e.metaKey) || e.altKey) return;

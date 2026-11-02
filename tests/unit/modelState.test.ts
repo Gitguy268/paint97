@@ -3,7 +3,7 @@ import { test } from "node:test";
 import { MODEL_STATE0, modelReducer, percent, type ModelEvent, type ModelState } from "../../src/lib/localAi/modelState.ts";
 
 const run = (events: ModelEvent[], from: ModelState = MODEL_STATE0) => events.reduce(modelReducer, from);
-const prog = (loadedBytes: number) => ({ partIndex: 0, partCount: 6, partLoaded: loadedBytes, partBytes: 100, loadedBytes, totalBytes: 600 });
+const prog = (loadedBytes: number) => ({ loadedBytes, totalBytes: 600 });
 
 test("probe: cached model warms up, missing model offers the download", () => {
   assert.equal(run([{ type: "probed", cached: true }]).phase, "loading");

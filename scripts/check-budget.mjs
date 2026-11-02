@@ -7,7 +7,7 @@
 //             graph: the desktop shell at first paint
 //   shell   = initial + every lazy chunk the entry names directly (one per
 //             app, plus Clippy). This is also what the service worker precaches.
-// Excalidraw and wllama sit behind a second dynamic import inside their apps,
+// Excalidraw, wllama and v86 sit behind a second dynamic import inside their apps,
 // so they are in neither number; if one leaks into the shell (a stray static
 // import), the budget fails by several hundred KiB.
 import fs from "node:fs";
@@ -19,7 +19,7 @@ import zlib from "node:zlib";
 const BUDGET_KIB = {
   initialJs: 98, // baseline ~85 KiB gz (React + shell)
   css: 12, // baseline ~7.5 KiB gz (98.css + win97.css)
-  sessionJs: 140, // baseline ~118 KiB gz (shell + all app chunks, no Excalidraw/wllama)
+  sessionJs: 140, // baseline ~118 KiB gz (shell + all app chunks, no Excalidraw/wllama/v86)
 };
 
 if (!fs.existsSync("dist/index.html")) {

@@ -1,0 +1,13 @@
+@import "./vendor/windows_98.css" layer(windows98);
+
+.app-icon { display: inline-block; object-fit: contain; image-rendering: pixelated; vertical-align: middle; flex: none; }
+.win98 { display: contents; }
+.start-menu.menu { width: auto; cursor: default; }
+.start-menu .menu-sidebar { position: relative; height: auto; }
+.start-menu button { font: inherit; }
+.start-menu button:focus-visible { outline: 1px dotted #fff; outline-offset: -3px; }
+
+/* Adapted from RetroBar's Windows 95-98.xaml (Apache-2.0); WPF theme translated to CSS. */
+.taskbar { --face: #c0c0c0; --shadow: #808080; --hi: #ffffff; --dark: #000000; }
+.taskbar .start-btn.pressed, .taskbar .task-item.active { box-shadow: inset -1px -1px #fff, inset 1px 1px #000, inset -2px -2px #dfdfdf, inset 2px 2px #808080; }
+.taskbar .tray { border: solid; border-width: 1px; border-color: #808080 #fff #fff #808080; box-shadow: none; margin: 1px 0; }

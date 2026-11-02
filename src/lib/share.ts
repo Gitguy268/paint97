@@ -15,11 +15,11 @@ export const MAX_SHARE_LENGTH = 32 * 1024;
 // Refuse to even compress absurd payloads — a scene this large could never
 // fit under the encoded cap anyway, and stringifying megabytes of elements
 // just to discover that would stall the tab.
-const MAX_SHARE_INPUT = 4 * 1024 * 1024;
+export const MAX_SHARE_INPUT = 4 * 1024 * 1024;
 
 type Bytes = Uint8Array<ArrayBuffer>;
 
-const toBase64Url = (bytes: Bytes): string => {
+export const toBase64Url = (bytes: Bytes): string => {
   // Chunked: String.fromCharCode.apply blows the arg limit on big arrays.
   let bin = "";
   const CHUNK = 0x8000;
@@ -29,7 +29,7 @@ const toBase64Url = (bytes: Bytes): string => {
   return btoa(bin).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 };
 
-const fromBase64Url = (s: string): Bytes => {
+export const fromBase64Url = (s: string): Bytes => {
   const bin = atob(s.replace(/-/g, "+").replace(/_/g, "/"));
   const out = new Uint8Array(bin.length);
   for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
@@ -45,10 +45,10 @@ const deflate = (bytes: Bytes): Promise<Bytes> =>
 const inflate = (bytes: Bytes): Promise<Bytes> =>
   transform(bytes, new DecompressionStream("deflate") as TransformStream<Bytes, Bytes>);
 
-const encodeText = (text: string): Promise<Bytes> =>
+export const encodeText = (text: string): Promise<Bytes> =>
   deflate(new TextEncoder().encode(text));
 
-const decodeText = (bytes: Bytes): Promise<string> =>
+export const decodeText = (bytes: Bytes): Promise<string> =>
   inflate(bytes).then((out) => new TextDecoder().decode(out));
 
 /** Encoded `#scene=…` hash for the current scene, or null when it won't fit. */

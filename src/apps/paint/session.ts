@@ -23,3 +23,5 @@ boundFile.subscribe(() => {
 export const paintApi = createStore<PaintApi | null>(null);
 /** A command the user approved; Paint applies it as soon as its canvas exists. */
 export const canvasCmd = createStore<CanvasCommand | null>(null);
+/** Mermaid code the user approved, the same way. */
+export const canvasDiagram = createStore<string | null>(null);

@@ -1,8 +1,6 @@
 import react from '@vitejs/plugin-react'
 import type { Plugin } from 'vite'
 import { defineConfig } from 'vite'
-import fs from 'node:fs'
-import path from 'node:path'
 
 // ---------------------------------------------------------------------------
 // Security headers
@@ -19,10 +17,11 @@ import path from 'node:path'
 //  - script-src allows only 'self' plus the *version-pinned* Clippy fallback
 //    package (src/lib/clippyChoppy.ts); unpinned or inline script is refused.
 //    'wasm-unsafe-eval' lets the browser compile WebAssembly — required by
-//    the Ask Clippy on-device runtime (@wllama/wllama) and by nothing else;
+//    the Ask Clippy runtime (vendored wllama) and the PC Emulator (v86);
 //    it does NOT permit regular inline or remote script execution.
-//  - connect-src 'self' plus raw.githubusercontent.com, which serves the
-//    split model parts committed in models/ (src/lib/localAi/model.ts).
+//  - connect-src 'self' plus the two places the Ask Clippy model comes
+//    from (src/lib/localAi/runtime.ts): huggingface.co for the weights and
+//    *.hf.co for the region-dependent CDN its downloads redirect to.
 //    Every other third-party fetch stays blocked (defense in depth: the
 //    dependency's #addLibrary=/ ?addLibrary= URL-token import is inert
 //    in this app — 0 call sites — but this keeps it that way if a future
@@ -31,6 +30,11 @@ import path from 'node:path'
 //    attributes. script-src deliberately does NOT get 'unsafe-inline'.
 //  - dev additionally allows the inline Vite/React Refresh preamble script
 //    and the HMR websocket (localhost-only dev server).
+//  - frame-src 'self' is for JS Paint (public/jspaint, an <iframe> on our own
+//    origin). Paths under /jspaint/ get FRAMED below instead: they may be
+//    framed by this origin only, may frame nothing but this origin, and may
+//    connect to nothing but this origin. data: and blob: are there because JS
+//    Paint reads its autosaved picture and opened files back with fetch().
 // ---------------------------------------------------------------------------
 const CSP_DIRECTIVES = (scriptSrc: string, connectSrc: string) =>
   [
@@ -49,21 +53,21 @@ const CSP_DIRECTIVES = (scriptSrc: string, connectSrc: string) =>
     "worker-src 'self' blob:",
     // https: only — keeps Excalidraw's embeddable players working while
     // refusing http:, data: and file: frames.
-    "frame-src https:",
+    "frame-src 'self' https:",
   ].join('; ')
 
 const CSP_PROD = CSP_DIRECTIVES(
   "'self' 'wasm-unsafe-eval' https://cdn.jsdelivr.net/npm/clippyjs@0.1.0/",
-  "'self' https://raw.githubusercontent.com",
+  "'self' https://huggingface.co https://*.hf.co",
 )
 const CSP_DEV = CSP_DIRECTIVES(
   "'self' 'unsafe-inline' 'wasm-unsafe-eval'",
-  "'self' https://raw.githubusercontent.com ws://localhost:7891 ws://127.0.0.1:7891",
+  "'self' https://huggingface.co https://*.hf.co ws://localhost:7891 ws://127.0.0.1:7891",
 )
 
 const PERMISSIONS_POLICY = [
   'accelerometer=()',
-  'camera=()',
+  'camera=(self)', // Send to a device scans the other device's code; /jspaint/ keeps camera=()
   'display-capture=()',
   'encrypted-media=()',
   'geolocation=()',
@@ -79,6 +83,9 @@ const PERMISSIONS_POLICY = [
   'window-management=()',
 ].join(', ')
 
+/** JS Paint is same-origin, so it would inherit the camera; it gets none. */
+const FRAMED_PERMISSIONS = PERMISSIONS_POLICY.replace('camera=(self)', 'camera=()')
+
 const baseHeaders = {
   'X-Content-Type-Options': 'nosniff',
   'X-Frame-Options': 'DENY',
@@ -90,8 +97,20 @@ const baseHeaders = {
 
 const withCsp = (csp: string) => ({ ...baseHeaders, 'Content-Security-Policy': csp })
 
-const setHeaders = (res: { setHeader(k: string, v: string): void }, csp: string) => {
-  for (const [k, v] of Object.entries(withCsp(csp))) res.setHeader(k, v)
+/** The policy for /jspaint/ — scripts/check-csp-sync.mjs derives vercel.json's copy the same way. */
+const FRAMED = (csp: string) =>
+  csp
+    .replace("frame-ancestors 'none'", "frame-ancestors 'self'")
+    .replace("frame-src 'self' https:", "frame-src 'self'")
+    .replace(/connect-src [^;]*/, "connect-src 'self' data: blob:")
+
+const setHeaders = (req: { url?: string }, res: { setHeader(k: string, v: string): void }, csp: string) => {
+  const framed = req.url?.startsWith('/jspaint/')
+  for (const [k, v] of Object.entries(withCsp(framed ? FRAMED(csp) : csp))) res.setHeader(k, v)
+  if (framed) {
+    res.setHeader('X-Frame-Options', 'SAMEORIGIN')
+    res.setHeader('Permissions-Policy', FRAMED_PERMISSIONS)
+  }
 }
 
 /**
@@ -102,14 +121,14 @@ function securityHeaders(): Plugin {
   return {
     name: 'paint97:security-headers',
     configureServer(server) {
-      server.middlewares.use((_req, res, next) => {
-        setHeaders(res, CSP_DEV)
+      server.middlewares.use((req, res, next) => {
+        setHeaders(req, res, CSP_DEV)
         next()
       })
     },
     configurePreviewServer(server) {
-      server.middlewares.use((_req, res, next) => {
-        setHeaders(res, CSP_PROD)
+      server.middlewares.use((req, res, next) => {
+        setHeaders(req, res, CSP_PROD)
         next()
       })
     },
@@ -139,26 +158,6 @@ function selfHostExcalidrawFonts(): Plugin {
   }
 }
 
-/**
- * Serve the committed model parts (./models, 253 MB, deliberately not in public/ so they
- * are never copied into dist or precached) to the dev and preview servers.
- */
-function serveModels(): Plugin {
-  const handler = (req: { url?: string }, res: import('node:http').ServerResponse, next: () => void) => {
-    const m = /^\/models\/([\w.-]+\.part)$/.exec(req.url ?? '')
-    const file = m && path.join(import.meta.dirname, 'models', m[1]!)
-    if (!file || !fs.existsSync(file)) return next()
-    res.setHeader('Content-Type', 'application/octet-stream')
-    res.setHeader('Content-Length', String(fs.statSync(file).size))
-    fs.createReadStream(file).pipe(res)
-  }
-  return {
-    name: 'paint97:serve-models',
-    configureServer(server) { server.middlewares.use(handler) },
-    configurePreviewServer(server) { server.middlewares.use(handler) },
-  }
-}
-
 /** Build-time CSP <meta> so static deployments get a policy without a server. */
 function cspMeta(): Plugin {
   return {
@@ -182,7 +181,7 @@ export default defineConfig(() => {
   return {
     // NOTE: vercel.json duplicates the production policy as HTTP headers —
     // `npm run check:csp` (CI) fails if the two ever drift apart.
-    plugins: [react(), selfHostExcalidrawFonts(), securityHeaders(), serveModels(), cspMeta()],
+    plugins: [react(), selfHostExcalidrawFonts(), securityHeaders(), cspMeta()],
     server: {
       port: 7891,
       host: 'localhost',

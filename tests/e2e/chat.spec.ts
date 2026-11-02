@@ -1,33 +1,35 @@
-// Ask Clippy with a scripted engine and a seeded model cache: no 253 MB download, no inference.
-import { expect, test, type Page } from "@playwright/test";
-import fs from "node:fs";
-import { boot, objectCount, openFromStart, openPaint, win } from "./helpers.ts";
+// Ask Clippy without the 1.6 GB model: the model manager runs the real range loader
+// against a stubbed Hugging Face, the reply path runs a scripted engine.
+import { expect, test } from "@playwright/test";
+import { boot, drawRect, objectCount, openFromStart, openPaint, win } from "./helpers.ts";
 
-type Manifest = { sha256: string; repo: string; ref: string; parts: { file: string; bytes: number }[] };
-const manifest = JSON.parse(fs.readFileSync("models/manifest.json", "utf8")) as Manifest;
-
-async function seedModel(page: Page) {
-  await page.evaluate(async (m) => {
-    const cache = await caches.open(`paint97-model-${m.sha256.slice(0, 8)}`);
-    for (const p of m.parts) await cache.put(`https://raw.githubusercontent.com/${m.repo}/${m.ref}/models/${p.file}`, new Response(new Uint8Array(0), { headers: { "content-length": String(p.bytes) } }));
-  }, manifest);
-}
-
-test("without the model: an offer, a pausable download, and nothing sent anywhere", async ({ page }) => {
-  // Serve one slow part so Pause lands mid-download; the bytes are junk, which the hash check must reject on resume.
-  await page.route("**/models/*.part", async (route) => { await new Promise<void>((r) => { setTimeout(r, 400); }); await route.fulfill({ status: 200, contentType: "application/octet-stream", body: Buffer.alloc(1024) }); });
+test("without the model: an offer, a pausable download, and a bad range is refused", async ({ page }) => {
+  // Each range arrives slowly, so Pause lands mid-download, and short, which the loader must refuse rather than cache.
+  let rangeRequests = 0;
+  const ranges: string[] = [];
+  await page.route("https://huggingface.co/**", async (route) => {
+    rangeRequests++;
+    ranges.push(route.request().headers()["range"] ?? "");
+    await new Promise<void>((r) => { setTimeout(r, 400); });
+    await route.fulfill({ status: 206, contentType: "application/octet-stream", headers: { "access-control-allow-origin": "*" }, body: "junk" });
+  });
   await boot(page);
   await openFromStart(page, "Ask Clippy…");
   const chat = win(page, "Ask Clippy…");
   await expect(chat).toContainText("Nothing you type ever leaves your computer");
-  await chat.getByRole("button", { name: /Download 253 MB/ }).click();
+  await chat.getByRole("button", { name: /Download 1573 MB/ }).click();
   await expect(chat.getByRole("progressbar", { name: "Model download" })).toBeVisible();
   await chat.getByRole("button", { name: "Pause" }).click();
   await expect(chat.getByRole("button", { name: /Download|Resume/ })).toBeVisible();
   await chat.getByRole("button", { name: /Download|Resume/ }).click();
-  // A part with the wrong bytes is never accepted.
-  await expect(chat.getByRole("alert")).toContainText(/bytes|hash|SHA/i, { timeout: 15_000 });
-  await expect(chat.getByRole("button", { name: "Retry" })).toBeVisible();
+  await expect(chat.getByRole("alert")).toContainText("part 1 of 25 came back as 4 bytes", { timeout: 15_000 });
+  // The rejected range is not kept: Retry fetches it again instead of failing on a cached copy.
+  const before = rangeRequests;
+  await chat.getByRole("button", { name: "Retry" }).click();
+  await expect.poll(() => rangeRequests).toBeGreaterThan(before);
+  await expect(chat.getByRole("alert")).toContainText("part 1 of 25 came back as 4 bytes", { timeout: 15_000 });
+  // Every request asked for exactly the first 64 MiB of the pinned file.
+  expect(new Set(ranges)).toEqual(new Set(["bytes=0-67108863"]));
 });
 
 test("streaming reply with Stop, then a canvas command behind Apply/Cancel", async ({ page }) => {
@@ -48,7 +50,6 @@ test("streaming reply with Stop, then a canvas command behind Apply/Cancel", asy
     });
   });
   await boot(page);
-  await seedModel(page);
   await openPaint(page);
   await openFromStart(page, "Ask Clippy…");
   const chat = win(page, "Ask Clippy…");
@@ -77,4 +78,56 @@ test("streaming reply with Stop, then a canvas command behind Apply/Cancel", asy
   await page.keyboard.press("Enter");
   await page.getByRole("dialog", { name: "Clippy wants to draw" }).getByRole("button", { name: "Apply" }).click();
   await objectCount(page, 1);
+});
+
+test("Look at my drawing sends the canvas as a picture; Diagram lands Mermaid as shapes after Apply", async ({ page }) => {
+  await page.addInitScript(() => {
+    const replies = [
+      ["I see a box."],
+      ["```mermaid\nflowchart TD\n  A[Start] --> B[Finish]\n```"],
+    ];
+    const w = globalThis as unknown as { __p97EngineFactory: unknown; __sent: unknown[] };
+    w.__sent = [];
+    w.__p97EngineFactory = () => ({
+      chat: async (messages: { role: string; content: unknown }[], onDelta: (t: string) => void, _s?: AbortSignal, options?: unknown) => {
+        const last = messages[messages.length - 1]!;
+        const content = Array.isArray(last.content)
+          ? last.content.map((p: { type: string; data?: ArrayBuffer; text?: string }) =>
+              p.type === "image" ? { type: "image", jpeg: new Uint8Array(p.data!)[0] === 0xff } : p)
+          : last.content;
+        w.__sent.push({ system: messages[0]!.content, content, options: options ?? null });
+        await new Promise<void>((r) => { setTimeout(r, 50); });
+        for (const piece of replies.shift() ?? []) onDelta(piece);
+      },
+    });
+  });
+  await boot(page);
+  await openPaint(page);
+  await drawRect(page); // something to look at
+  await objectCount(page, 1);
+
+  await openFromStart(page, "Ask Clippy…");
+  const chat = win(page, "Ask Clippy…");
+  const input = chat.getByLabel("Message to Clippy");
+  await input.waitFor({ timeout: 15_000 });
+
+  // 98.css draws the box on the label; the native input underneath is hidden.
+  await chat.locator('label[for="chat-look"]').click();
+  await expect(chat.getByLabel("Look at my drawing")).toBeChecked();
+  await input.fill("what did I draw?");
+  await page.keyboard.press("Enter");
+  await expect(chat.locator(".chat-msg.assistant")).toContainText("I see a box.");
+  const looked = await page.evaluate(() => (globalThis as unknown as { __sent: { content: unknown }[] }).__sent[0]!.content);
+  expect(looked).toEqual([{ type: "image", jpeg: true }, { type: "text", text: "what did I draw?" }]);
+
+  await input.fill("login flow");
+  await chat.getByRole("button", { name: "Diagram" }).click();
+  const ask = page.getByRole("dialog", { name: "Clippy drew a diagram" });
+  await expect(ask).toBeVisible();
+  const asked = await page.evaluate(() => (globalThis as unknown as { __sent: unknown[] }).__sent[1]);
+  expect(asked).toEqual({ system: "Reply with one Mermaid diagram only.", content: "login flow", options: { temperature: 0, max_tokens: 1024 } });
+  await objectCount(page, 1); // nothing is drawn before the user agrees
+  await ask.getByRole("button", { name: "Apply" }).click();
+  // Two labelled boxes and the arrow between them.
+  await expect.poll(async () => Number((await page.locator(".paint .status-bar").innerText()).match(/(\d+) object/)?.[1] ?? 0), { timeout: 30_000 }).toBeGreaterThan(3);
 });

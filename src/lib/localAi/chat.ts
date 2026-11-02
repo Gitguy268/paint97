@@ -4,10 +4,35 @@
 
 export type ChatMsg = { role: "user" | "assistant"; content: string };
 
-// The model is tiny (270M params): short answers keep quality up and latency
+// The model is small (1B params): short answers keep quality up and latency
 // down. 200 tokens leaves room for a <canvas> command block plus a sentence
 // or two of prose. Spread into wllama's createChatCompletion().
 export const GENERATION = { temperature: 0.7, max_tokens: 200 } as const;
+
+// "Diagram": the request goes out under the exact system prompt the mermaid
+// fine-tune (~/minimind-mermaid) was trained behind, greedy, with room for the
+// average 300-token answer and its long tail — the chat's 200 would cut it off.
+export const DIAGRAM_SYSTEM = "Reply with one Mermaid diagram only.";
+export const DIAGRAM_GENERATION = { temperature: 0, max_tokens: 1024 } as const;
+
+const DIAGRAM_KW = /^\s*(flowchart|graph|mindmap|sequenceDiagram|classDiagram|stateDiagram(?:-v2)?|erDiagram|gantt|pie|timeline|journey|gitGraph|quadrantChart|xychart-beta|block-beta|sankey-beta|requirementDiagram|C4Context|kanban|packet-beta|architecture-beta)\b/m;
+
+/**
+ * The Mermaid code in a reply, or null when there is none: a fenced block
+ * first, else everything from the first line that opens with a diagram
+ * keyword. Capped at 200 lines and 4000 characters, because the parser that
+ * reads it next is fed model output. eval/score.py in minimind-mermaid
+ * applies the same rules, so its scores are this function's.
+ */
+export function extractMermaid(reply: string): string | null {
+  // Any info string: a small model writes ```merymaid as often as ```mermaid.
+  const fence = /```[\w-]*[ \t]*\n([\s\S]*?)(?:```|$)/.exec(reply);
+  const body = fence ? fence[1]! : reply;
+  const k = DIAGRAM_KW.exec(body);
+  if (!k) return null;
+  const code = body.slice(k.index).trim();
+  return code.split("\n").slice(0, 200).join("\n").slice(0, 4000);
+}
 
 // Greeting shown in an empty transcript — a UI hint, not model output.
 export const CHAT_HINT =
@@ -21,12 +46,13 @@ const SYSTEM_BASE = [
 
 // How the model may ask to draw: exactly one strict block, and only when
 // asked. Every claim made here is enforced by validateCanvasCommand below —
-// the prompt teaches, the validator decides.
+// the prompt teaches, the validator decides. The colours are named because a
+// small model cannot tell which hex is which and otherwise invents one.
 const CANVAS_RULE = [
   "To draw on the whiteboard, end your reply with exactly one block of the form",
   '<canvas>{"tool":"rectangle","x":100,"y":100,"w":300,"h":200,"stroke":"#1e1e1e","fill":"transparent","text":""}</canvas>',
-  "- tool is one of rectangle, ellipse, diamond, arrow, line, text; x/y is the top-left position (clamped to -50000…50000), w/h the size in pixels (up to 5000, negative points left/up for arrow and line);",
-  "stroke is one of #1e1e1e #e03131 #2f9e44 #1971c2 #f08c00, fill one of transparent #ffc9c9 #ffec99 #d0bfff #b2f2bb #a5d8ff, text only for tool text (max 200 characters, otherwise empty).",
+  "- always all eight keys; tool is one of rectangle, ellipse (also for circles), diamond, arrow, line, text; x/y is the top-left position (clamped to -50000…50000), w/h the size in pixels (up to 5000, negative points left/up for arrow and line);",
+  "stroke is one of #1e1e1e (black) #e03131 (red) #2f9e44 (green) #1971c2 (blue) #f08c00 (orange), fill one of transparent #ffc9c9 (pink) #ffec99 (yellow) #d0bfff (purple) #b2f2bb (light green) #a5d8ff (light blue), never any other colour; text only for tool text (max 200 characters, otherwise empty).",
   "Only emit the block when the user asks you to draw something — never in a casual reply.",
 ].join(" ");
 
@@ -75,8 +101,8 @@ export function summarizeScene(els: readonly unknown[]): string | null {
 /**
  * Trim a conversation that starts with a user turn down to the last
  * `maxTurns` exchanges, also dropping while it stays above `maxChars`.
- * Drops whole user/assistant pairs only, so the alternation the Gemma chat
- * template requires can never break (dropping a lone user message would
+ * Drops whole user/assistant pairs only, so the alternation strict chat
+ * templates require can never break (dropping a lone user message would
  * leave a reply at index 0 and the template rejects the conversation).
  */
 export function trimHistory(
@@ -101,7 +127,7 @@ export function trimHistory(
  * What actually gets sent: the transcript trimmed down to whole exchanges
  * that end with a question (an in-progress assistant line or empty draft is
  * never a prompt — dropping it keeps the request ending on a user turn, the
- * one shape the Gemma chat template always accepts).
+ * one shape every chat template accepts).
  */
 export function messagesForRequest(msgs: readonly ChatMsg[]): ChatMsg[] {
   const complete = [...msgs];
@@ -177,7 +203,9 @@ export function validateCanvasCommand(raw: unknown): CanvasCommand | null {
   if (typeof raw !== "object" || raw === null || Array.isArray(raw)) return null;
   const o = raw as Record<string, unknown>;
   for (const key of Object.keys(o)) if (!ALLOWED_KEYS.has(key)) return null;
-  if (!isOneOf(TOOLS, o.tool)) return null;
+  // Small models write "circle" however the prompt names the tool.
+  const tool = o.tool === "circle" ? "ellipse" : o.tool;
+  if (!isOneOf(TOOLS, tool)) return null;
   const x = finite(o.x);
   const y = finite(o.y);
   const w = finite(o.w);
@@ -187,9 +215,9 @@ export function validateCanvasCommand(raw: unknown): CanvasCommand | null {
   if (!isOneOf(FILLS, o.fill)) return null;
   const text = o.text === undefined ? "" : o.text;
   if (typeof text !== "string" || text.length > MAX_TEXT) return null;
-  if (o.tool === "text" ? text.trim() === "" : text !== "") return null;
+  if (tool === "text" ? text.trim() === "" : text !== "") return null;
   return {
-    tool: o.tool,
+    tool,
     x: clamp(x, -MAX_COORD, MAX_COORD),
     y: clamp(y, -MAX_COORD, MAX_COORD),
     w: dim(w),

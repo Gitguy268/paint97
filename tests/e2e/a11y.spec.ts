@@ -1,5 +1,5 @@
 // WCAG 2.1 A/AA: axe over every state of Paint97's own chrome, plus the keyboard and
-// focus behaviour axe cannot see. Excalidraw's own DOM (.excali-host) is upstream and excluded.
+// focus behaviour axe cannot see. Excalidraw's own DOM (.excali-host) and JS Paint's (iframe.jspaint) are upstream and excluded.
 import { expect, test, type Page } from "@playwright/test";
 import fs from "node:fs";
 import { boot, dialog, openFromStart, openPaint, win } from "./helpers.ts";
@@ -9,7 +9,7 @@ async function axe(page: Page, label: string) {
   await page.evaluate(AXE);
   const violations = await page.evaluate(async () => {
     const w = window as unknown as { axe: { run(ctx: object, opts: object): Promise<{ violations: { id: string; nodes: { target: string[] }[] }[] }> } };
-    const res = await w.axe.run({ exclude: [[".excali-host"]] }, { runOnly: { type: "tag", values: ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"] } });
+    const res = await w.axe.run({ exclude: [[".excali-host"], ["iframe.jspaint"]] }, { runOnly: { type: "tag", values: ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"] } });
     return res.violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(" ")).slice(0, 4).join(" | ")}`);
   });
   expect(violations, label).toEqual([]);
@@ -17,6 +17,10 @@ async function axe(page: Page, label: string) {
 
 test("axe: desktop, Start menu, every app window and dialogs", async ({ page }) => {
   test.slow();
+  // CI has no GPU: with a stand-in adapter Ask Clippy shows its download offer instead of "unsupported".
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, "gpu", { configurable: true, value: { requestAdapter: () => Promise.resolve({ features: new Set(["shader-f16"]) }) } });
+  });
   await boot(page);
   await page.locator(".clippy").waitFor();
   await axe(page, "desktop + Clippy");
@@ -47,9 +51,10 @@ test("axe: desktop, Start menu, every app window and dialogs", async ({ page }) 
   await page.getByLabel("Notepad text").press("Control+h");
   await axe(page, "Notepad + replace bar");
 
-  for (const [name, label] of [["Calculator", "Calculator"], ["Minesweeper", "Minesweeper"], ["Clock", "Clock"], ["Control Panel", "Control Panel"], ["Help", "Help"], ["Ask Clippy…", "Ask Clippy"]] as const) {
+  for (const [name, label] of [["Calculator", "Calculator"], ["Minesweeper", "Minesweeper"], ["Clock", "Clock"], ["Control Panel", "Control Panel"], ["Help", "Help"], ["Ask Clippy…", "Ask Clippy"], ["PC Emulator", "PC Emulator"], ["JS Paint", "JS Paint"]] as const) {
     await openFromStart(page, name);
     await win(page, name).waitFor();
+    if (label === "Ask Clippy") await win(page, name).getByRole("button", { name: /^Download/ }).waitFor();
     await axe(page, label);
   }
 });

@@ -38,7 +38,6 @@ jobs:
       - run: npm run check:budget
       - run: npm run check:csp
       - run: npm run check:assets
-      - run: npm run model:verify
 
   e2e:
     name: Playwright (flow, offline, Clippy cadence, axe, visual)

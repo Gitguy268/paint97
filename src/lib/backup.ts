@@ -1,9 +1,12 @@
 // One JSON file holding everything Paint97 keeps in this browser: settings, window
-// layout, notes (localStorage) and the canvas, drawings, folders and versions (IndexedDB).
-// The Ask Clippy model is not included: it is a 253 MB download, not user data.
+// layout, BrowserFS notes and the canvas, drawings, folders and versions (IndexedDB).
+// The Ask Clippy model is not included: it is a 1.6 GB download, not user data.
+import { NOTE_NAME_KEY, NOTE_TEXT_KEY, type NoteStore } from "./noteStore.ts";
 import type { KvStore } from "./idb.ts";
 
 export const LS_PREFIX = "paint97.";
+/** JS Paint (public/jspaint) autosaves each picture under a key of its own on this origin. */
+const JSPAINT_PICTURE = "image#";
 /** Record families this app writes to the KV database; anything else in a backup is refused. */
 const KV_KEY = /^(scene$|fs:(index$|body:[\w-]+$|ver:[\w-]+:\d+$))/;
 export const MAX_BACKUP_BYTES = 200 * 1024 * 1024;
@@ -12,15 +15,17 @@ const MAX_ENTRIES = 20_000;
 export type Backup = { app: "paint97"; version: 1; exportedAt: string; local: Record<string, string>; kv: Record<string, string> };
 export type LocalLike = { readonly length: number; key(i: number): string | null; getItem(k: string): string | null; setItem(k: string, v: string): void; removeItem(k: string): void };
 
-const localKeys = (ls: LocalLike): string[] => {
+const localKeys = (ls: LocalLike, prefix = LS_PREFIX): string[] => {
   const out: string[] = [];
-  for (let i = 0; i < ls.length; i++) { const k = ls.key(i); if (k?.startsWith(LS_PREFIX)) out.push(k); }
+  for (let i = 0; i < ls.length; i++) { const k = ls.key(i); if (k?.startsWith(prefix)) out.push(k); }
   return out;
 };
 
-export async function exportBackup(ls: LocalLike, kv: KvStore | null, now = new Date()): Promise<Backup> {
+export async function exportBackup(ls: LocalLike, kv: KvStore | null, now = new Date(), notes: NoteStore | null = null): Promise<Backup> {
   const local: Record<string, string> = {};
   for (const k of localKeys(ls)) { const v = ls.getItem(k); if (v !== null) local[k] = v; }
+  const note = await notes?.load();
+  if (note && local[NOTE_TEXT_KEY] === undefined) { local[NOTE_TEXT_KEY] = note.text; local[NOTE_NAME_KEY] = note.name; }
   const data: Record<string, string> = {};
   for (const k of kv ? await kv.keys("") : []) {
     const v = KV_KEY.test(k) ? await kv!.get(k) : null;
@@ -52,16 +57,26 @@ export function parseBackup(raw: unknown): Backup {
   };
 }
 
-export async function resetAll(ls: LocalLike, kv: KvStore | null): Promise<void> {
+export async function resetAll(ls: LocalLike, kv: KvStore | null, notes: NoteStore | null = null): Promise<void> {
+  await notes?.clear();
   for (const k of kv ? await kv.keys("") : []) await kv!.del(k);
-  for (const k of localKeys(ls)) ls.removeItem(k);
+  for (const k of [...localKeys(ls), ...localKeys(ls, JSPAINT_PICTURE)]) ls.removeItem(k);
 }
 
 /** Replace all local data with the backup. The big records go first: if storage fails there, settings are untouched. */
-export async function importBackup(b: Backup, ls: LocalLike, kv: KvStore | null): Promise<void> {
+export async function importBackup(b: Backup, ls: LocalLike, kv: KvStore | null, notes: NoteStore | null = null): Promise<void> {
   if (Object.keys(b.kv).length && !kv) throw new Error("storage unavailable");
   for (const k of kv ? await kv.keys("") : []) await kv!.del(k);
   for (const [k, v] of Object.entries(b.kv)) await kv!.set(k, v);
+  if (notes) {
+    const text = b.local[NOTE_TEXT_KEY];
+    if (text === undefined) await notes.clear();
+    else await notes.save({ text, name: b.local[NOTE_NAME_KEY] ?? "notes.txt" });
+  }
   for (const k of localKeys(ls)) ls.removeItem(k);
-  for (const [k, v] of Object.entries(b.local)) ls.setItem(k, v);
+  for (const [k, v] of Object.entries(b.local)) {
+    // BrowserFS notes can exceed the available localStorage quota.
+    if (notes && (k === NOTE_TEXT_KEY || k === NOTE_NAME_KEY)) continue;
+    ls.setItem(k, v);
+  }
 }

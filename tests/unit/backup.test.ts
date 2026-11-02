@@ -38,10 +38,12 @@ test("parseBackup refuses foreign files and drops keys it does not own", () => {
   assert.deepEqual(Object.keys(b.kv), ["scene"]);
 });
 
-test("reset clears Paint97 data only; import fails loudly without storage", async () => {
+test("reset clears Paint97 data and JS Paint's pictures only; import fails loudly without storage", async () => {
   const { ls, kv } = await seeded();
+  ls.setItem("image#abc123", "data:image/png;base64,AAAA");
   await resetAll(ls, kv);
   assert.equal(ls.getItem("paint97.settings.v1"), null);
+  assert.equal(ls.getItem("image#abc123"), null);
   assert.equal(ls.getItem("other-app"), "keep me");
   assert.deepEqual(await kv.keys(""), []);
   await assert.rejects(importBackup(parseBackup({ app: "paint97", version: 1, local: {}, kv: { scene: "s" } }), ls, null), /unavailable/);

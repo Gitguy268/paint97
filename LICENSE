@@ -19,3 +19,24 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+---
+
+The MIT licence above covers the code of this project. It does not cover:
+
+- The Clippy artwork, animations and sounds in public/assets/clippy/. They
+  belong to Microsoft Corporation and are not licensed by this file. This
+  project is not affiliated with, endorsed by or sponsored by Microsoft, nor
+  with the Clippy projects the data format comes from. See
+  public/assets/clippy/README.md.
+- JS Paint, which a build fetches from https://github.com/1j01/jspaint and
+  serves from /jspaint/. Its code is MIT, copyright Isaiah Odhner. The
+  Microsoft Paint icons, cursors, help pages, sound and interface text it
+  ships belong to Microsoft Corporation and are not licensed by this file.
+  This project is not affiliated with or endorsed by Microsoft or JS Paint.
+- The Qwen2.5 model weights Ask Clippy downloads from Hugging Face. They are
+  not part of this repository and keep their own licence (Apache-2.0).
+- The fonts a build ships. Each keeps its own licence; see
+  public/licenses/FONTS.md.
+
+NOTICE lists every third-party component and where its licence text is.

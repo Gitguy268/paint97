@@ -1,3 +1,4 @@
+import { AppIcon } from "../ui/AppIcon.tsx";
 import { useEffect, useState } from "react";
 import { appById } from "../apps/registry.ts";
 import { useT } from "../i18n/index.ts";
@@ -24,7 +25,7 @@ export function Taskbar({ startOpen, onStart }: { startOpen: boolean; onStart: (
   return (
     <div className="taskbar" role="toolbar" aria-label={t("shell.taskbar")}>
       <button className={`start-btn ${startOpen ? "pressed" : ""}`} aria-haspopup="menu" aria-expanded={startOpen} onClick={onStart}>
-        <span className="logo" aria-hidden="true" />
+        <AppIcon src={`${import.meta.env.BASE_URL}icons/retrobar/start9x.png`} />
         <b>{t("shell.start")}</b>
       </button>
       <div className="task-items">
@@ -33,14 +34,14 @@ export function Taskbar({ startOpen, onStart }: { startOpen: boolean; onStart: (
           if (!def) return null;
           return (
             <button key={w.id} className={`task-item ${focused === w.id ? "active" : ""}`} aria-pressed={focused === w.id} onClick={() => actions.taskbar(w.id)}>
-              <span aria-hidden="true">{def.icon}</span> <span className="task-label">{w.title ?? t(def.title)}</span>
+              <span aria-hidden="true"><AppIcon src={def.icon} /></span> <span className="task-label">{w.title ?? t(def.title)}</span>
             </button>
           );
         })}
       </div>
       <div className="tray" role="group" aria-label={t("shell.tray")}>
         <button className="tray-btn" aria-pressed={muted} aria-label={muted ? t("shell.unmute") : t("shell.mute")} onClick={() => updateSettings({ muted: !muted })}>
-          {muted ? "🔇" : "🔊"}
+          <AppIcon src={`${import.meta.env.BASE_URL}icons/win98/loudspeaker_${muted ? "muted" : "wave"}-0.png`} />
         </button>
         <TrayClock />
       </div>

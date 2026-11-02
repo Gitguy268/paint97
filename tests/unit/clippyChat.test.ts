@@ -1,5 +1,5 @@
 // Unit tests for src/lib/localAi/chat.ts — the scene snapshot fed to the
-// model, prompt assembly, history trimming (Gemma's template requires strict
+// model, prompt assembly, history trimming (strict chat templates require
 // user/assistant alternation) and streamed-reply cleanup.
 
 import assert from "node:assert/strict";
@@ -8,6 +8,8 @@ import {
   GENERATION,
   buildSystemPrompt,
   cleanReply,
+  DIAGRAM_GENERATION,
+  extractMermaid,
   messagesForRequest,
   summarizeScene,
   trimHistory,
@@ -58,7 +60,7 @@ test("buildSystemPrompt teaches the strict canvas block", () => {
   assert.match(prompt, /when the user asks you to draw/);
   // The prompt's promises are the validator's contract.
   assert.match(prompt, /-50000…50000/);
-  assert.match(prompt, /#1e1e1e/);
+  assert.match(prompt, /#1e1e1e \(black\)/);
 });
 
 test("trimHistory keeps the newest turns and never breaks alternation", () => {
@@ -78,7 +80,7 @@ test("trimHistory keeps the newest turns and never breaks alternation", () => {
   assert.deepEqual(trimHistory(unaligned), unaligned);
 });
 
-// The Gemma template raises when a conversation doesn't start with a user
+// A strict chat template raises when a conversation doesn't start with a user
 // turn (after the system prompt) or two same-role turns sit adjacent.
 function isAlternating(msgs: ChatMsg[]): boolean {
   if (msgs[0]?.role !== "user") return false;
@@ -110,4 +112,28 @@ test("cleanReply cuts at the next template marker and trims edges", () => {
 test("generation stays within the tiny-model budget", () => {
   assert.ok(GENERATION.max_tokens > 0 && GENERATION.max_tokens <= 200);
   assert.ok(GENERATION.temperature > 0 && GENERATION.temperature <= 1);
+});
+
+test("extractMermaid takes a fenced block first, else the code from its first diagram line", () => {
+  assert.equal(extractMermaid("Sure!\n```mermaid\nflowchart TD\n  A --> B\n```\nDone."), "flowchart TD\n  A --> B");
+  assert.equal(extractMermaid("Here you go:\nsequenceDiagram\n  A->>B: hi"), "sequenceDiagram\n  A->>B: hi");
+  // An unclosed fence (a reply cut at max_tokens) still yields what arrived.
+  assert.equal(extractMermaid("```\ngraph LR\n  A --> B"), "graph LR\n  A --> B");
+  // A misspelt info string is still a fence, so its closing ``` never reaches the parser.
+  assert.equal(extractMermaid("```merymaid\npie\n  \"a\" : 1\n```"), 'pie\n  "a" : 1');
+  assert.equal(extractMermaid("I cannot draw that."), null);
+  assert.equal(extractMermaid("a flowchart is a kind of diagram"), null, "the keyword must open a line");
+});
+
+test("extractMermaid caps what reaches the parser", () => {
+  const long = "flowchart TD\n" + Array.from({ length: 500 }, (_, i) => `  N${i} --> N${i + 1}`).join("\n");
+  const code = extractMermaid(long)!;
+  assert.equal(code.split("\n").length, 200);
+  assert.ok(extractMermaid("flowchart TD\n" + "A".repeat(10_000))!.length <= 4000);
+});
+
+test("diagrams are greedy and get room for a long answer", () => {
+  assert.equal(DIAGRAM_GENERATION.temperature, 0);
+  assert.ok(DIAGRAM_GENERATION.max_tokens >= 1024);
+  assert.ok(DIAGRAM_GENERATION.max_tokens > GENERATION.max_tokens);
 });

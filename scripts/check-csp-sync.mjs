@@ -52,6 +52,19 @@ for (const [key, value] of Object.entries(required)) {
 }
 if (!byKey["Permissions-Policy"]) failures.push("vercel.json missing Permissions-Policy");
 
+// JS Paint is framed by our own page, so /jspaint/ is carved out of the rule above and gets
+// the same headers with same-origin framing (FRAMED in vite.config.ts).
+const framedRule = vercel.headers?.find((r) => r.source === "/jspaint/(.*)");
+const expectedFramed = headerList.map((h) =>
+  h.key === "X-Frame-Options" ? { ...h, value: "SAMEORIGIN" }
+  : h.key === "Permissions-Policy" ? { ...h, value: h.value.replace("camera=(self)", "camera=()") }
+  : h.key === "Content-Security-Policy" ? { ...h, value: expectedHeaderCsp.replace("frame-ancestors 'none'", "frame-ancestors 'self'").replace("frame-src 'self' https:", "frame-src 'self'").replace(/connect-src [^;]*/, "connect-src 'self' data: blob:") }
+  : h,
+);
+if (vercel.headers?.[0]?.source !== "/((?!jspaint/).*)" || JSON.stringify(framedRule?.headers) !== JSON.stringify(expectedFramed)) {
+  failures.push("vercel.json: the /jspaint/ rule must repeat the main rule's headers with X-Frame-Options SAMEORIGIN, camera=(), frame-ancestors 'self', frame-src 'self' and connect-src 'self' data: blob:, and the main rule must exclude /jspaint/");
+}
+
 if (failures.length) {
   console.error("CSP/header sync check FAILED:");
   for (const f of failures) console.error(`  ✗ ${f}`);

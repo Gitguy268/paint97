@@ -1,6 +1,7 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import "98.css";
+import "./styles/integrations.css";
 import "./styles/win97.css";
 import "./styles/boot.css";
 import App from "./App.tsx";

@@ -42,6 +42,11 @@ test("splitCanvasCommand extracts one valid block and keeps the prose", () => {
   });
 });
 
+test("a circle is accepted as an ellipse; other unknown tools are refused", () => {
+  assert.equal(validateCanvasCommand(JSON.parse(rectJson({ tool: "circle" })))?.tool, "ellipse");
+  assert.equal(validateCanvasCommand(JSON.parse(rectJson({ tool: "star" }))), null);
+});
+
 test("replies without a block pass through untouched", () => {
   const { text, command } = splitCanvasCommand("Just a normal reply.");
   assert.equal(text, "Just a normal reply.");

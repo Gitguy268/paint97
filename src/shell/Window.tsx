@@ -1,3 +1,4 @@
+import { AppIcon } from "../ui/AppIcon.tsx";
 import { memo, Suspense, useEffect, useRef } from "react";
 import { appById } from "../apps/registry.ts";
 import { useT } from "../i18n/index.ts";
@@ -21,7 +22,9 @@ export const Window = memo(function Window({ win, z, active }: { win: WinState; 
   const max = win.mode === "max";
   const App = def.component;
 
-  const track = (move: (e: PointerEvent) => void, end?: (e: PointerEvent) => void) => {
+  const track = (down: React.PointerEvent, move: (e: PointerEvent) => void, end?: (e: PointerEvent) => void) => {
+    // Captured, so the drag keeps receiving moves while the pointer is over an <iframe> (JS Paint).
+    down.currentTarget.setPointerCapture(down.pointerId);
     const up = (e: PointerEvent) => {
       window.removeEventListener("pointermove", move);
       window.removeEventListener("pointerup", up);
@@ -37,6 +40,7 @@ export const Window = memo(function Window({ win, z, active }: { win: WinState; 
     if (max) return;
     drag.current = { sx: e.clientX, sy: e.clientY, x: win.rect.x, y: win.rect.y };
     track(
+      e,
       (ev) => { const d = drag.current; if (d) actions.move(win.id, d.x + ev.clientX - d.sx, d.y + ev.clientY - d.sy); },
       (ev) => { drag.current = null; const z2 = snapZone(ev.clientX, ev.clientY, workArea()); if (z2) actions.snap(win.id, z2); },
     );
@@ -47,7 +51,7 @@ export const Window = memo(function Window({ win, z, active }: { win: WinState; 
     e.preventDefault();
     actions.focus(win.id);
     const { sx, sy, r } = { sx: e.clientX, sy: e.clientY, r: win.rect };
-    track((ev) => {
+    track(e, (ev) => {
       const dx = ev.clientX - sx, dy = ev.clientY - sy;
       let { x, y, w, h } = r;
       if (dir.includes("e")) w = r.w + dx;
@@ -68,7 +72,7 @@ export const Window = memo(function Window({ win, z, active }: { win: WinState; 
       onPointerDownCapture={() => !active && actions.focus(win.id)}
     >
       <div className={`title-bar ${active ? "" : "inactive"}`} onPointerDown={onTitleDown} onDoubleClick={() => actions.toggleMax(win.id)}>
-        <span className="title-icon" aria-hidden="true">{def.icon}</span>
+        <span className="title-icon" aria-hidden="true"><AppIcon src={def.icon} /></span>
         <div className="title-bar-text" id={`${win.id}-t`}>{title}</div>
         <div className="title-bar-controls">
           <button aria-label={t("win.minimize")} onClick={() => actions.minimize(win.id)} />

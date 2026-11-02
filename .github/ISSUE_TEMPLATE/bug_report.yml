@@ -1,0 +1,43 @@
+name: Bug report
+description: Something does not work, or works differently from how it is described
+title: ''
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **If this looks like a security problem, do not report it here.** Follow
+        [SECURITY.md](https://github.com/Gitguy268/win97-excalidraw/blob/HEAD/SECURITY.md)
+        instead.
+
+  - type: textarea
+    id: what
+    attributes:
+      label: What happens
+      description: What did you do, what did you expect, and what did you get instead?
+    validations:
+      required: true
+
+  - type: input
+    id: browser
+    attributes:
+      label: Browser and version
+      description: The exact build, not just the name. "Firefox 145.0.2" rather than "Firefox".
+      placeholder: Firefox 145.0.2 on macOS
+    validations:
+      required: true
+
+  - type: textarea
+    id: console
+    attributes:
+      label: Anything in the browser console?
+      description: Open DevTools, reproduce it, and paste anything red.
+      render: text
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before you send this
+      options:
+        - label: I searched the open and closed issues for this.

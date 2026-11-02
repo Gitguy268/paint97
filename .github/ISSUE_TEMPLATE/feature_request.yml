@@ -1,0 +1,27 @@
+name: Feature request
+description: Suggest something Paint97 could do
+title: ''
+labels:
+  - enhancement
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What are you trying to do?
+      description: The situation, not the solution. What is in your way?
+    validations:
+      required: true
+
+  - type: textarea
+    id: current
+    attributes:
+      label: What do you do now?
+      description: Including the workarounds, even the clumsy ones.
+      render: markdown
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: What would you like instead?
+      description: Optional. A sketch is fine.
+      render: markdown

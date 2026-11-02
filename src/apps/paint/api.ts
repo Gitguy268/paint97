@@ -77,6 +77,29 @@ export async function insertSticker(api: PaintApi, glyph: string) {
 
 export const applyCanvasCommand = (api: PaintApi, cmd: CanvasCommand) => appendSkeleton(api, commandToSkeleton(cmd));
 
+/**
+ * Clippy's Mermaid code as Excalidraw elements, added to the drawing and scrolled into view.
+ * Flowcharts, sequence and class diagrams become shapes; other kinds arrive as one image.
+ * Rejects on code the parser refuses.
+ */
+export async function appendMermaid(api: PaintApi, code: string) {
+  const [{ parseMermaidToExcalidraw }, { convertToExcalidrawElements }] = await Promise.all([import("@excalidraw/mermaid-to-excalidraw"), lib()]);
+  const { elements, files } = await parseMermaidToExcalidraw(code);
+  const els = convertToExcalidrawElements(elements as ExcalidrawElementSkeleton[], { regenerateIds: true });
+  if (files) api.addFiles(Object.values(files));
+  api.updateScene({ elements: [...api.getSceneElements(), ...els] });
+  api.scrollToContent(els, { fitToContent: true });
+}
+
+/** The drawing as a JPEG for Clippy to look at, at most 896 px a side; null for an empty canvas. */
+export async function sceneJpeg(api: PaintApi): Promise<ArrayBuffer | null> {
+  const elements = api.getSceneElements();
+  if (!elements.length) return null;
+  const { exportToBlob } = await lib();
+  const blob = await exportToBlob({ elements, appState: { ...api.getAppState(), exportBackground: true }, files: api.getFiles(), mimeType: "image/jpeg", maxWidthOrHeight: 896 });
+  return blob.arrayBuffer();
+}
+
 /** Menu Undo/Redo: Excalidraw exposes no history API, so replay its own keyboard shortcut. */
 export function sendHistoryKey(redo: boolean) {
   const mac = /Mac|iPhone|iPad/.test(navigator.platform);

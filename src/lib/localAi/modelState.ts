@@ -1,6 +1,7 @@
 // Ask Clippy's model lifecycle as a pure state machine, so every transition
-// (including pause/resume of the 253 MB download) is unit-tested without a browser.
-import type { DownloadProgress } from "./model.ts";
+// (including pause/resume of the 1.6 GB download) is unit-tested without a browser.
+
+export type DownloadProgress = { loadedBytes: number; totalBytes: number };
 
 export type ModelPhase = "checking" | "absent" | "downloading" | "paused" | "loading" | "ready" | "error";
 export type ModelState = {
@@ -11,7 +12,7 @@ export type ModelState = {
 };
 export type ModelEvent =
   | { type: "probed"; cached: boolean }
-  | { type: "download" } // also "resume": already-verified parts are skipped by installModel
+  | { type: "download" } // also "resume": shards that already finished stay cached
   | { type: "progress"; progress: DownloadProgress }
   | { type: "paused" }
   | { type: "installed" }

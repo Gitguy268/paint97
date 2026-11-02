@@ -6,8 +6,7 @@
 // and its writes do not block timers.
 //
 // The wrapper exposes a structural KV interface (get/set/del over JSON
-// strings) so unit tests pass a stand-in — the same pattern as
-// localAi/model.ts's PartCache. When IndexedDB is missing, blocked or
+// strings) so unit tests pass a stand-in. When IndexedDB is missing, blocked or
 // broken, `openSceneStore()` resolves null and callers fall back to the
 // legacy localStorage record instead of losing the canvas.
 
@@ -134,8 +133,7 @@ export const sharedStore = (): Promise<KvStore | null> => (shared ??= openSceneS
 // Structural injection point used by every store module: `undefined` means
 // "use the real shared store", `null` means "IndexedDB is unavailable"
 // (callers take their documented fallback path), and unit tests pass a
-// stand-in KvStore instead. The same pattern as PartCache in
-// localAi/model.ts.
+// stand-in KvStore instead.
 export type KvArg = KvStore | null | undefined;
 export const kvOf = (kv: KvArg): Promise<KvStore | null> =>
   kv === undefined ? sharedStore() : Promise.resolve(kv);

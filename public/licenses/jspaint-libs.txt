@@ -1,0 +1,61 @@
+Licences of the libraries inside JS Paint (served from /jspaint/lib/)
+====================================================================
+
+JS Paint (https://github.com/1j01/jspaint, MIT, /jspaint/LICENSE.txt) ships
+these libraries in its lib/ folder. Six of them carry no licence notice in
+the file itself, so their notices are supplied here, each taken from the
+LICENSE file of the library's own repository. All six are under the MIT
+licence, whose text follows the list.
+
+OS-GUI.js (lib/os-gui/) — https://github.com/1j01/os-gui
+  Copyright (c) 2018 Isaiah Odhner
+
+Font Detective (lib/font-detective.js) — https://github.com/1j01/font-detective
+  Copyright 2008 Gabriel Handford
+
+gif.js (lib/gif.js/) — https://github.com/jnordberg/gif.js
+  Copyright (c) 2013-2018 Johan Nordberg
+
+pako 2.0.3 (lib/pako-2.0.3.min.js) — https://github.com/nodeca/pako
+  Copyright (C) 2014-2017 by Vitaly Puzrin and Andrei Tuputcyn
+
+UPNG.js (lib/UPNG.js) — https://github.com/photopea/UPNG.js
+  Copyright (c) 2017 Photopea
+
+UTIF.js (lib/UTIF.js) — https://github.com/photopea/UTIF.js
+  Copyright (c) 2017 Photopea
+
+The MIT License
+---------------
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+The other libraries state their licence in the shipped files
+------------------------------------------------------------
+
+jQuery 3.4.1 — MIT — header of lib/jquery-3.4.1.min.js
+98.css — MIT — Copyright (c) 2020 Jordan Scales — header of lib/98.css/*.css
+PDF.js — Apache-2.0 — Copyright 2021 Mozilla Foundation — lib/pdf.js/LICENSE
+Tracky Mouse — MIT — Copyright (c) 2021 Isaiah Odhner — lib/tracky-mouse/LICENSE.txt
+AnyPalette.js 0.6.0 — MIT — Isaiah Odhner — header of lib/anypalette-0.6.0.js
+FileSaver.js — MIT — Eli Grey — header of lib/FileSaver.js
+bmp.js — MIT — shaozilee, 1j01 — header of lib/bmp.js
+libtess.js — SGI Free Software License B — Copyright 2000 Silicon Graphics,
+  Inc.; Copyright 2015 Google Inc. — header of lib/libtess.min.js
+ImageTracer.js 1.2.5 — The Unlicense — header of lib/imagetracer_v1.2.5.js

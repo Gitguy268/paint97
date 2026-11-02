@@ -1,49 +1,167 @@
 Paint97 (win97-excalidraw)
 Copyright (c) 2026 Lucas Van De Weerd — MIT, see LICENSE.
 
-This product uses third-party components. Their licences (all permissive)
-are summarised below; the original licence texts ship inside node_modules
-and in each upstream repository.
+The MIT licence covers the code of this project only. The Clippy artwork
+belongs to Microsoft, as do the Microsoft Paint assets inside JS Paint, the
+PC Emulator's firmware and boot floppy are LGPL and GPL, and each font keeps
+its own licence. The sections below say which is which
+and where each licence text is.
 
 RUNTIME DEPENDENCIES
 --------------------
 Excalidraw — @excalidraw/excalidraw 0.18.1 — MIT
   https://github.com/excalidraw/excalidraw
-  The canvas text faces (Excalifont/Virgil hand-drawn styles and the UI
-  fallback families: Assistant, Cascadia, Comic Shanns, Liberation, Lilita,
-  Nunito, Xiaolai) are copied unmodified from the npm package into
-  public/fonts at build time (scripts/copy-fonts.mjs; not committed) and
-  served from this project's own origin, so a deployed build DOES
-  redistribute them. Review each family's licence before publishing a
-  build: per Excalidraw, the hand-drawn faces are CC BY 4.0 and most UI
-  families are SIL OFL 1.1. The npm package ships no licence files next
-  to the fonts; the upstream repository is the reference.
+  The canvas text faces (Excalifont, Virgil, Assistant, Cascadia, Comic
+  Shanns, Liberation, Lilita One, Nunito, Xiaolai) are copied unmodified
+  from the npm package into public/fonts at build time
+  (scripts/copy-fonts.mjs; not committed) and served from this project's
+  own origin, so a deployed build redistributes them. Comic Shanns is MIT;
+  the other eight are SIL Open Font License 1.1, each checked against its
+  own source repository. The npm package ships no licence files next to
+  the fonts, so they are supplied here: public/licenses/FONTS.md lists
+  every family with its copyright notice, beside OFL-1.1.txt and
+  ComicShanns-MIT.txt, and all three ship in every build.
 
 98.css 0.1.21 — MIT — Copyright (c) 2020 Jordan Scales
   https://github.com/jdan/98.css
-  Ships the "Pixelated MS Sans Serif" web font that serves as Paint97's
-  UI face (replacing a proprietary TTF that was NOT redistributable).
+  The stylesheet is MIT. The "Pixelated MS Sans Serif" web font it ships,
+  which is Paint97's UI face (replacing a proprietary TTF that was NOT
+  redistributable), is not: it is the FontStruction "MS Sans Serif" and
+  "MS Sans Serif Bold" by "lou", licensed CC BY-SA 3.0
+  (https://creativecommons.org/licenses/by-sa/3.0/). Used unmodified;
+  see public/licenses/FONTS.md.
 
 react / react-dom 19.3.0 — MIT — Meta Platforms, Inc.
 
-clippyjs 0.1.0 (CDN fallback only, version-pinned by CSP) — MIT — Pi0
-  https://github.com/pi0/clippyjs
+jsQR 1.4.0 — Apache-2.0 — Cosmo Wolfe and contributors
+  https://github.com/cozmo/jsQR
+  Reads Send to a device's pairing codes from the camera where the browser
+  has no BarcodeDetector (lazy-loaded; its code ships inside our bundle).
+  Licence text: public/licenses/jsQR-Apache-2.0.txt
 
-@wllama/wllama 3.8.1 — MIT — Xuan Son NGUYEN
+qrcode-generator 2.0.4 — MIT — Copyright (c) 2009 Kazuhiko Arase
+  https://github.com/kazuhikoarase/qrcode-generator
+  Draws Send to a device's pairing codes (lazy-loaded). "QR Code" is a
+  registered trademark of DENSO WAVE INCORPORATED.
+  Licence text: public/licenses/qrcode-generator-MIT.txt
+
+clippyjs 0.1.0 (CDN fallback only, version-pinned by CSP) — MIT
+  Copyright (c) 2012 Fireplace, Inc - 2017 Pooya Parsa
+  https://github.com/pithings/clippy
+  A rewrite of Clippy.JS — MIT — Copyright (c) 2012 Fireplace, Inc
+  https://github.com/smore-inc/clippy.js
+  Both licence texts are in public/assets/clippy/.
+
+wllama 3.11.0 (master build 1a5687ef7c) — MIT — Copyright (c) Xuan-Son Nguyen
   https://github.com/ngxson/wllama
-  WebAssembly build of llama.cpp for browsers — the Ask Clippy runtime
-  (lazy-loaded, single-threaded, optional WebGPU). Its 8.7 MB wllama.wasm
-  is served from our own origin; its worker code ships inside our bundle.
+  with llama.cpp — MIT — Copyright (c) The ggml authors
+  https://github.com/ggml-org/llama.cpp
+  Runs the Ask Clippy model, on WebGPU when the browser has it. Vendored
+  as built under public/vendor/wllama/, lazy-loaded; both licence texts
+  are in that directory.
+
+@excalidraw/mermaid-to-excalidraw 2.2.2 — MIT — Excalidraw
+  https://github.com/excalidraw/mermaid-to-excalidraw
+  Turns the Mermaid code Ask Clippy writes into canvas elements
+  (lazy-loaded; it pulls in Mermaid, MIT, which ships with Excalidraw).
+
+v86 0.5.471 — BSD-2-Clause — Copyright (c) 2012, The v86 contributors
+  https://github.com/copy/v86
+  x86 PC emulator with an x86-to-WebAssembly JIT — the PC Emulator runtime
+  (lazy-loaded; its 2 MB v86.wasm is served from our own origin). The
+  build contains parts ported from QEMU's floppy controller (MIT), Berkeley
+  SoftFloat 3e (BSD-3-Clause) and the Zstandard decompressor (BSD).
+  All four licence texts: public/licenses/v86-LICENSES.txt
+
+FETCHED AT BUILD TIME (served from /jspaint/, not in this repository)
+--------------------------------------------------------------------
+JS Paint 1.1.0 — MIT — Copyright (c) 2022 Isaiah Odhner
+  https://github.com/1j01/jspaint
+  at commit 53be67ab8c47cc0d2168899e7481bc04839c4c81
+  scripts/copy-jspaint.mjs fetches that commit and copies what the app
+  loads at runtime into public/jspaint (not committed), so a deployed build
+  redistributes it. Changes made to the copy: files the app does not load
+  are left out (tooling, the Electron and Discord builds, the Firebase
+  client, pdf.js's viewer, the head tracker's models, the Windows resource
+  files the translations were generated from, the upstream homepage); the
+  news screenshots hosted on other sites and the winter theme's Google
+  Fonts import are removed; the Homepage and Privacy Policy links point at
+  jspaint.app; and five menu items that need another host, the camera or
+  the microphone are disabled (Load From URL, Upload To Imgur, Multi-User,
+  Head Tracker, Speech Recognition). Licence text: /jspaint/LICENSE.txt in every build.
+
+  Libraries inside that copy, as JS Paint ships them:
+    jQuery 3.4.1 — MIT — JS Foundation and other contributors
+    OS-GUI.js — MIT — Isaiah Odhner — https://github.com/1j01/os-gui
+    98.css (custom build) — MIT — Copyright (c) 2020 Jordan Scales
+    PDF.js — Apache-2.0 — Copyright 2021 Mozilla Foundation
+      licence text: /jspaint/lib/pdf.js/LICENSE
+    Tracky Mouse (loader and stylesheet only) — MIT — Copyright (c) 2021
+      Isaiah Odhner — licence text: /jspaint/lib/tracky-mouse/LICENSE.txt
+    AnyPalette.js 0.6.0 — MIT — Isaiah Odhner
+    Font Detective — MIT — Copyright 2008 Gabriel Handford
+    FileSaver.js — MIT — Eli Grey
+    gif.js — MIT — Johan Nordberg
+    pako 2.0.3 — MIT — Vitaly Puzrin and Andrei Tuputcyn
+    UPNG.js and UTIF.js — MIT — Photopea
+    bmp.js — MIT — shaozilee, modified by Isaiah Odhner
+    libtess.js — SGI Free Software License B 2.0 — Copyright 2000 Silicon
+      Graphics, Inc.; Copyright 2015 Google Inc.
+    ImageTracer.js 1.2.5 — The Unlicense (public domain) — András Jankovics
+  jQuery, 98.css, PDF.js, Tracky Mouse, AnyPalette, FileSaver, bmp.js,
+  libtess and ImageTracer state their licence in the shipped file. OS-GUI,
+  Font Detective, gif.js, pako, UPNG and UTIF ship without a notice, so
+  theirs are supplied in public/licenses/jspaint-libs.txt, each checked
+  against the LICENSE file of its own repository; it ships in every build.
+
+  NOT covered by this project's MIT licence, nor by JS Paint's:
+  JS Paint is a recreation of Microsoft Paint. The classic icons and
+  cursors (images/), the help pages (help/), audio/chord.wav and the
+  translated interface text (localization/, generated from Windows
+  resource files) come from Microsoft Paint and Windows. They belong to
+  Microsoft Corporation and no licence for them is granted here. JS Paint's
+  author writes that the project includes "resources I don't have the
+  copyright to". "Paint" and "Windows" are Microsoft's. This project is not
+  affiliated with, endorsed by or sponsored by Microsoft, nor affiliated
+  with or endorsed by JS Paint.
 
 VENDORED ASSETS
 ---------------
+public/v86/seabios.bin, vgabios.bin
+  NOT covered by this project's MIT licence.
+  SeaBIOS and SeaVGABIOS rel-1.16.2 — LGPL-3.0 — the firmware the PC
+  Emulator boots. Unmodified copies from copy/v86 at commit 94faf3d.
+  Source: https://git.seabios.org/seabios.git, tag rel-1.16.2, built with
+  https://github.com/copy/v86/blob/94faf3d/bios/seabios.config
+  Licence texts: public/licenses/LGPL-3.0.txt and GPL-3.0.txt
+
+public/v86/freedos.img
+  NOT covered by this project's MIT licence.
+  A 720 KB boot floppy holding the FreeDOS kernel (build 2040) and FreeCOM
+  0.82 pl 3, both GPL-2.0-or-later and unmodified.
+  FreeCOM source: https://github.com/FDOS/freecom/tree/com082pl3
+  Kernel source: build 2040 is an untagged April 2012 development build
+  that predates the kernel's git history. The nearest published source is
+  https://github.com/FDOS/kernel/tree/c4311571563bad4496c994c108ae305b2548e000
+  (build 2041); earlier revisions are in the FreeDOS Subversion archive,
+  https://sourceforge.net/p/freedos/svn/HEAD/tree/kernel/
+  Cut down from https://i.copy.sh/freedos722.img by scripts/make-freedos.mjs,
+  which removes every other program on that disk; public/v86/README.md
+  lists what is left, with hashes. Licence text: public/licenses/GPL-2.0.txt
+  FreeDOS is a trademark of Jim Hall. This project is not affiliated with
+  or endorsed by the FreeDOS Project, SeaBIOS or v86.
+
 public/assets/clippy/map.png, agent.json, sounds.json
-  Agent/sprite data from pithings/clippy — Microsoft Office assistant
-  assets extracted with Double Agent, referenced via clippyjs. These are
-  property of Microsoft; used here as an unofficial, non-commercial fan
-  homage. Not affiliated with, endorsed by or sponsored by Microsoft.
-  "Clippy", "Office Assistants" and the sprite artwork are trademarks of
-  Microsoft Corporation.
+  NOT covered by this project's MIT licence.
+  Agent and sprite data in the format of pithings/clippy and
+  smore-inc/clippy.js (both MIT for their code; licence texts beside the
+  files). The character artwork, animations and sounds are Microsoft
+  Office assistant assets, extracted with Double Agent by Cinnamon
+  Software. They belong to Microsoft Corporation and no licence for them
+  is granted here. "Clippy" and "Office Assistants" are Microsoft's.
+  This project is an unofficial fan homage and is not affiliated with,
+  endorsed by or sponsored by Microsoft, nor affiliated with or endorsed
+  by pithings/clippy or smore-inc/clippy.js.
 
 public/pc-icon.png — public domain
   "CRT Monitor" via OpenClipart/FreeSVG (https://freesvg.org/crt-monitor),
@@ -51,17 +169,16 @@ public/pc-icon.png — public domain
 
 docs/screenshots/*.png — screenshots of this project, MIT with the project.
 
-ON-DEVICE MODEL WEIGHTS (fetched on demand, not part of dist/)
---------------------------------------------------------------
-Gemma 3 270M IT (Q4_K_M quantisation), converted to GGUF and published by
-lm-kit: https://huggingface.co/lm-kit/gemma-3-270m-instruct-gguf
-  © Google LLC. Distributed under the Gemma Terms of Use
-  (https://ai.google.dev/gemma/terms), which permit redistribution of the
-  weights with attribution — hence this notice. The 253 MB file is split
-  into six ~42 MB parts committed under models/ and fetched at runtime
-  from this origin's /models/ when present, else raw.githubusercontent.com; scripts/prepare-model.mjs records every
-  part's size and SHA-256 in models/manifest.json and the app refuses any
-  part that does not match.
+ON-DEVICE MODEL (downloaded by the user's browser, not part of this repo or dist/)
+---------------------------------------------------------------------------------
+MiniCPM-V 4.7 1B (Q4_K_M, with its f16 image projector) — Apache-2.0 —
+OpenBMB: https://huggingface.co/openbmb/MiniCPM-V-4.7-1B
+  The GGUF files are OpenBMB's own:
+  https://huggingface.co/openbmb/MiniCPM-V-4.7-1B-gguf
+  This project does not redistribute the weights: when a user asks for
+  the model, their browser fetches it from huggingface.co at a pinned
+  revision, in 64 MiB ranges that are each checked against a SHA-256
+  (src/lib/localAi/minicpm-v.json) before they are stored.
 
 DESIGN / CODE CREDITS
 ---------------------
@@ -72,5 +189,41 @@ DESIGN / CODE CREDITS
 DEVELOPMENT TOOLCHAIN (not shipped in dist/)
 --------------------------------------------
 Vite (MIT), TypeScript (Apache-2.0), oxlint (MIT), Playwright (Apache-2.0),
-esbuild (MIT), @vitejs/plugin-react (MIT), axe-core (MIT, runs the WCAG A/AA
-audit inside `npm test`), @types/* (MIT).
+esbuild (MIT), @vitejs/plugin-react (MIT), axe-core (MPL-2.0, runs the WCAG
+A/AA audit inside `npm test`), @types/* (MIT).
+
+IDEAS, NO CODE
+--------------
+Send to a device takes its ideas from two native apps; no code from either
+is in this project, and neither can run in a browser.
+LocalSend — Apache-2.0 — https://github.com/localsend/localsend
+  Sending straight to a device nearby, and the receiver accepting first.
+qrcp — MIT — https://github.com/claudiodangelis/qrcp
+  Pairing two devices by scanning a QR code.
+
+CLASSIC DESKTOP INTEGRATIONS
+----------------------------
+BrowserFS 1.4.3 — MIT — John Vilk and other BrowserFS contributors
+  https://github.com/jvilk/BrowserFS
+  Lazy-loaded Notepad filesystem. Full bundled notices, including its
+  internal dependencies: public/licenses/BrowserFS-LICENSE.txt.
+
+windows_98.css — MIT — Eric Schoffstall
+  https://github.com/yocontra/windows_98.css
+  Commit a5c75c1c8fa2c4638d6192161eb7710e00a0766c; compiled stylesheet unmodified,
+  scoped to Start in a lower-priority CSS layer.
+  Licence: public/licenses/windows_98.css-MIT.txt.
+
+RetroBar — Apache-2.0 — dremin and contributors
+  https://github.com/dremin/RetroBar
+  Commit 69f36278150cb39bc37d3237e3178926734c6804; start9x.png unmodified, and
+  Windows 95-98.xaml adapted to CSS in src/styles/integrations.css.
+  Licence: public/licenses/RetroBar-Apache-2.0.txt. No native executable.
+
+Win98-Icons — repository MIT notice — Copyright (c) 2024 ZTI
+  https://github.com/zhaotianff/Win98-Icons
+  Commit 3a266076e77e91a5237d2eb6c128bb4e965f7392; selected PNGs copied unmodified.
+  Repository notice: public/licenses/Win98-Icons-MIT.txt. The Windows 98
+  artwork and the Windows Start logo from RetroBar belong to Microsoft;
+  no licence for Microsoft's artwork or trademarks is granted here.
+  This project is not affiliated with or endorsed by these projects or Microsoft.

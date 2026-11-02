@@ -1,3 +1,4 @@
+import { AppIcon } from "../ui/AppIcon.tsx";
 import { useEffect, useState } from "react";
 import { appById } from "../apps/registry.ts";
 import { useT } from "../i18n/index.ts";
@@ -27,7 +28,7 @@ function Switcher({ ids, index }: { ids: string[]; index: number }) {
           if (!w || !def) return null;
           return (
             <div key={id} id={`sw-${id}`} role="option" aria-selected={i === index} className={`sw-item ${i === index ? "sel" : ""}`}>
-              <span className="glyph" aria-hidden="true">{def.icon}</span>
+              <span className="glyph" aria-hidden="true"><AppIcon src={def.icon} size={32} /></span>
               <span>{w.title ?? t(def.title)}</span>
             </div>
           );
@@ -80,7 +81,8 @@ export function Shell({ extraStart, children }: { extraStart?: MenuEntry[]; chil
     <div className="desktop" style={{ background: wallpaperById(wallpaper).css || undefined }}>
       <main aria-label={t("shell.desktop")} className="desktop-area">
         <DesktopIcons />
-        {wins.map((w, i) => <Window key={w.id} win={w} z={10 + i} active={w.id === active} />)}
+        {/* Stacking is z-index alone; the DOM keeps opening order (the id sequence, as in the taskbar): moving a window's node would reload an <iframe> inside it (JS Paint). */}
+        {wins.map((w, i) => ({ w, z: 10 + i })).sort((a, b) => Number(a.w.id.split("#")[1]) - Number(b.w.id.split("#")[1])).map(({ w, z }) => <Window key={w.id} win={w} z={z} active={w.id === active} />)}
         {children}
       </main>
       {startOpen && <StartMenu extra={extraStart} onClose={() => setStartOpen(false)} />}

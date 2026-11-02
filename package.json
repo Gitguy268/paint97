@@ -1,7 +1,7 @@
 {
   "name": "@gitguy/win97-excalidraw",
   "description": "A Windows 9x desktop in the browser around an Excalidraw whiteboard. Fully client-side.",
-  "repository": "github:gitguy/win97-excalidraw",
+  "repository": "github:Gitguy268/win97-excalidraw",
   "private": true,
   "version": "1.0.0",
   "type": "module",
@@ -9,9 +9,9 @@
     "node": ">=20.19.0"
   },
   "scripts": {
-    "predev": "node scripts/copy-fonts.mjs",
+    "predev": "node scripts/copy-fonts.mjs && node scripts/copy-jspaint.mjs",
     "dev": "vite",
-    "prebuild": "node scripts/copy-fonts.mjs",
+    "prebuild": "node scripts/copy-fonts.mjs && node scripts/copy-jspaint.mjs",
     "build": "tsc -b && vite build && node scripts/gen-sw.mjs",
     "typecheck": "tsc -b",
     "lint": "oxlint",
@@ -22,16 +22,19 @@
     "check:csp": "node scripts/check-csp-sync.mjs",
     "check:assets": "node scripts/check-assets.mjs",
     "check:budget": "node scripts/check-budget.mjs",
-    "model:verify": "node scripts/prepare-model.mjs --verify",
     "test:visual": "playwright test tests/e2e/visual.spec.ts",
     "check": "npm run lint && npm run typecheck && npm run test:unit && npm run build && npm run check:budget && npm run check:csp && npm run check:assets"
   },
   "dependencies": {
-    "@excalidraw/excalidraw": "0.18.1",
-    "@wllama/wllama": "3.8.1",
     "98.css": "0.1.21",
+    "@excalidraw/excalidraw": "0.18.1",
+    "@excalidraw/mermaid-to-excalidraw": "2.2.2",
+    "browserfs": "1.4.3",
+    "jsqr": "1.4.0",
+    "qrcode-generator": "2.0.4",
     "react": "19.3.0",
-    "react-dom": "19.3.0"
+    "react-dom": "19.3.0",
+    "v86": "0.5.471"
   },
   "devDependencies": {
     "@playwright/test": "1.63.0",
