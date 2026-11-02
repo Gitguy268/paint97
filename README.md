@@ -32,13 +32,40 @@ Everything is client-side. There is no backend, no account and no analytics.
   </tr>
 </table>
 
+<!-- run-steps:start -->
+## Run it locally, step by step
+
+1. **Install [Node.js](https://nodejs.org) 20.19** or newer.
+
+2. **Get the code:**
+
+   ```sh
+   git clone https://github.com/Gitguy268/paint97.git
+   cd paint97
+   ```
+
+3. **Install the dependencies:**
+
+   ```sh
+   npm ci
+   ```
+
+4. **Start it:**
+
+   ```sh
+   npm run dev
+   ```
+
+5. **Open <http://localhost:7891/>** in your browser. Press `Ctrl+C` in the terminal to stop.
+<!-- run-steps:end -->
+
 ## Run it
 
 Needs Node 20.19 or newer (`.nvmrc` pins the version this is built with).
 
 ```sh
-# not on GitHub yet: start from a copy of this folder
-cd win97-excalidraw
+git clone https://github.com/Gitguy268/paint97.git
+cd paint97
 npm ci
 npm run dev        # http://localhost:7891
 ```
