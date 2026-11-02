@@ -66,12 +66,12 @@ const closure = (startRel) => {
 };
 
 const html = read("index.html");
-const entry = /src="\/(assets\/[^"]+\.js)"/.exec(html)?.[1];
+const entry = /src="(?:\/[^"]*?\/|\.?\/)?(assets\/[^"]+\.js)"/.exec(html)?.[1];
 if (!entry) {
   console.error("no entry <script> found in dist/index.html");
   process.exit(1);
 }
-const css = [...html.matchAll(/href="\/(assets\/[^"]+\.css)"/g)].map((m) => m[1]);
+const css = [...html.matchAll(/href="(?:\/[^"]*?\/|\.?\/)?(assets\/[^"]+\.css)"/g)].map((m) => m[1]);
 
 const session = closure(entry);
 for (const m of read(entry).matchAll(DYNAMIC)) {
