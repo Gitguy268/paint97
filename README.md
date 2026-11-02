@@ -32,6 +32,10 @@ Everything is client-side. There is no backend, no account and no analytics.
   </tr>
 </table>
 
+<!-- live-links -->
+**Live:** [gitguy268.github.io/paint97](https://gitguy268.github.io/paint97/) · [paint97.vercel.app](https://paint97.vercel.app)
+<!-- /live-links -->
+
 <!-- run-steps:start -->
 ## Run it locally, step by step
 
