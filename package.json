@@ -28,7 +28,7 @@
   "dependencies": {
     "98.css": "0.1.21",
     "@excalidraw/excalidraw": "0.18.1",
-    "@excalidraw/mermaid-to-excalidraw": "2.2.2",
+    "@excalidraw/mermaid-to-excalidraw": "3.1.0",
     "browserfs": "1.4.3",
     "jsqr": "1.4.0",
     "qrcode-generator": "2.0.4",
