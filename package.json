@@ -34,7 +34,7 @@
     "qrcode-generator": "2.0.4",
     "react": "19.3.0",
     "react-dom": "19.3.0",
-    "v86": "0.5.471"
+    "v86": "0.5.472"
   },
   "devDependencies": {
     "@playwright/test": "1.63.0",
