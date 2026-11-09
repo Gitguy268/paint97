@@ -44,7 +44,7 @@
     "@vitejs/plugin-react": "6.1.2",
     "axe-core": "4.14.0",
     "esbuild": "0.28.2",
-    "oxlint": "1.83.0",
+    "oxlint": "1.92.0",
     "typescript": "6.0.3",
     "vite": "8.3.0"
   },
